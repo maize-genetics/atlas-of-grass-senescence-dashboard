@@ -138,9 +138,9 @@ library(base64enc)
 # --- 1. DATA LOADING (Must be at the TOP) ---
 # Detect base URL: works on both localhost and GitHub Pages
 base_url &lt;- tryCatch({
-  loc &lt;- httpuv::page_url()
+  page_loc &lt;- webr::eval_js("window.location.href")
   # Extract everything up to and including the last /
-  sub("/[^/]*$", "/", loc)
+  sub("/[^/]*$", "/", page_loc)
 }, error = function(e) "http://localhost:8000/")
 
 if (!file.exists("vst_full_xz.rds")) download.file(paste0(base_url, "vst_full_xz.rds"), "vst_full_xz.rds")
