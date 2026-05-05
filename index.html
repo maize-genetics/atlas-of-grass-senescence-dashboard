@@ -98,7 +98,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <script>
   var checkShinyUI = setInterval(function() {
-    if (document.getElementById('gene_id')) {
+    if (document.getElementById('welcome-ready-signal')) {
       clearInterval(checkShinyUI);
       var el = document.getElementById('loading-overlay');
       if (el) { 
@@ -326,6 +326,7 @@ ui &lt;- page_navbar(
     layout_sidebar(
       sidebar = sidebar(
         title = "About This Dashboard",
+        tags$div(id = "welcome-ready-signal", style = "display:none;"),
         p("Interactively access the transcriptomic data featured in the paper:"),
         tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks limit nitrogen recycling in annuals"),
         br(),
