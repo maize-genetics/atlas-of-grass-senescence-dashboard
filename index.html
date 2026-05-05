@@ -136,16 +136,24 @@ library(stringr)
 library(base64enc)
 
 # --- 1. DATA LOADING (Must be at the TOP) ---
-if (!file.exists("vst_full_xz.rds")) download.file("http://localhost:8000/vst_full_xz.rds", "vst_full_xz.rds")
-if (!file.exists("metadata.rds")) download.file("http://localhost:8000/metadata.rds", "metadata.rds")
-if (!file.exists("mapping_full_xz.rds")) download.file("http://localhost:8000/mapping_full_xz.rds", "mapping_full_xz.rds")
-if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file("http://localhost:8000/09_TOM_UMAP_embedding_leaf.csv", "09_TOM_UMAP_embedding_leaf.csv")
-if (!file.exists("09_top_edges_leaf.csv")) download.file("http://localhost:8000/09_top_edges_leaf.csv", "09_top_edges_leaf.csv")
-if (!file.exists("leaf_network_maizeminedescription.txt")) download.file("http://localhost:8000/leaf_network_maizeminedescription.txt", "leaf_network_maizeminedescription.txt")
-if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file("http://localhost:8000/09_TOM_UMAP_embedding_underground.csv", "09_TOM_UMAP_embedding_underground.csv")
-if (!file.exists("09_top_edges_underground.csv")) download.file("http://localhost:8000/09_top_edges_underground.csv", "09_top_edges_underground.csv")
-if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file("http://localhost:8000/08_module_eigengenes_samples_underground.csv", "08_module_eigengenes_samples_underground.csv")
-if (!file.exists("und_network_maizeminedescription.txt")) download.file("http://localhost:8000/und_network_maizeminedescription.txt", "und_network_maizeminedescription.txt")
+# Detect base URL: works on both localhost and GitHub Pages
+base_url &lt;- tryCatch({
+  loc &lt;- httpuv::page_url()
+  # Extract everything up to and including the last /
+  sub("/[^/]*$", "/", loc)
+}, error = function(e) "http://localhost:8000/")
+
+if (!file.exists("vst_full_xz.rds")) download.file(paste0(base_url, "vst_full_xz.rds"), "vst_full_xz.rds")
+if (!file.exists("metadata.rds")) download.file(paste0(base_url, "metadata.rds"), "metadata.rds")
+if (!file.exists("mapping_full_xz.rds")) download.file(paste0(base_url, "mapping_full_xz.rds"), "mapping_full_xz.rds")
+if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_leaf.csv"), "09_TOM_UMAP_embedding_leaf.csv")
+if (!file.exists("09_top_edges_leaf.csv")) download.file(paste0(base_url, "09_top_edges_leaf.csv"), "09_top_edges_leaf.csv")
+if (!file.exists("leaf_network_maizeminedescription.txt")) download.file(paste0(base_url, "leaf_network_maizeminedescription.txt"), "leaf_network_maizeminedescription.txt")
+if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_underground.csv"), "09_TOM_UMAP_embedding_underground.csv")
+if (!file.exists("09_top_edges_underground.csv")) download.file(paste0(base_url, "09_top_edges_underground.csv"), "09_top_edges_underground.csv")
+if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file(paste0(base_url, "08_module_eigengenes_samples_underground.csv"), "08_module_eigengenes_samples_underground.csv")
+if (!file.exists("und_network_maizeminedescription.txt")) download.file(paste0(base_url, "und_network_maizeminedescription.txt"), "und_network_maizeminedescription.txt")
+
 
 vst_counts &lt;- readRDS("vst_full_xz.rds")
 metadata &lt;- readRDS("metadata.rds")
@@ -165,16 +173,16 @@ und_edges_df &lt;- read.csv("09_top_edges_underground.csv", stringsAsFactors = F
 
 dir.create("welcome_assets", showWarnings = FALSE)
 if (!file.exists("welcome_assets/species_tree.png")) {
-  tryCatch(download.file("http://localhost:8000/welcome_assets/species_tree.png", "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
+  tryCatch(download.file(paste0(base_url, "welcome_assets/species_tree.png"), "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
 }
 if (!file.exists("welcome_assets/umap_atlas.png")) {
-  tryCatch(download.file("http://localhost:8000/welcome_assets/umap_atlas.png", "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
+  tryCatch(download.file(paste0(base_url, "welcome_assets/umap_atlas.png"), "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
 }
 if (!file.exists("welcome_assets/methodology_summary.png")) {
-  tryCatch(download.file("http://localhost:8000/welcome_assets/methodology_summary.png", "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
+  tryCatch(download.file(paste0(base_url, "welcome_assets/methodology_summary.png"), "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
 }
 if (!file.exists("welcome_assets/gdd_plot.png")) {
-  tryCatch(download.file("http://localhost:8000/welcome_assets/gdd_plot.png", "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
+  tryCatch(download.file(paste0(base_url, "welcome_assets/gdd_plot.png"), "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
 }
 
 welcome_b64 &lt;- list(
@@ -192,7 +200,7 @@ module_plots_b64 &lt;- setNames(lapply(module_names, function(mod) {
   local_path &lt;- paste0("module_plots/module_", mod, ".png")
   if (!file.exists(local_path)) {
     tryCatch(
-      download.file(paste0("http://localhost:8000/module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
+      download.file(paste0(base_url, "module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
       error = function(e) NULL
     )
   }
@@ -208,7 +216,7 @@ und_module_plots_b64 &lt;- setNames(lapply(und_module_names, function(mod) {
   local_path &lt;- paste0("module_plots_underground/module_", mod, ".png")
   if (!file.exists(local_path)) {
     tryCatch(
-      download.file(paste0("http://localhost:8000/module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
+      download.file(paste0(base_url, "module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
       error = function(e) NULL
     )
   }
