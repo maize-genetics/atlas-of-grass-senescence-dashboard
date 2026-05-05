@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Grass Senescence Atlas (Data loads in 1-2 min)</title>
+<title>Grass Senescence Atlas</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -72,7 +72,7 @@ ul.task-list li input[type="checkbox"] {
 
 
       <div class="navbar-title">
-        <div class="navbar-title-text"><a href="#">Grass Senescence Atlas (Data loads in 1-2 min)</a></div>
+        <div class="navbar-title-text"><a href="#">Grass Senescence Atlas</a></div>
         
         
       </div>
@@ -87,6 +87,16 @@ ul.task-list li input[type="checkbox"] {
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
 <div class="card html-fill-item html-fill-container bslib-card" data-fill="false" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-body html-fill-item html-fill-container">
+<div id="loading-disclaimer-banner" style="position: absolute; top: 12px; right: 80px; z-index: 1050; color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; pointer-events: none;" class="html-fill-item html-fill-container">
+  Notice: Data loads in 1-2 min. Please do not close or refresh this page.
+</div>
+<script>
+  // Remove the banner once Shiny is connected
+  $(document).on('shiny:connected', function() {
+    var banner = document.getElementById('loading-disclaimer-banner');
+    if (banner) banner.remove();
+  });
+</script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
