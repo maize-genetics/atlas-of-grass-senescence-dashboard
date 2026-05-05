@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Grass Senescence Atlas</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="index_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-f94a2cbb241206ec2fa297ee311e3d52.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-dark-f94a2cbb241206ec2fa297ee311e3d52.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-f94a2cbb241206ec2fa297ee311e3d52.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="index_files/libs/quarto-dashboard/quarto-dashboard.js"></script>
+<script src="index_files/libs/quarto-dashboard/stickythead.js"></script>
+
+
+
+<script src="index_files/libs/quarto-dashboard/web-components.js" type="module"></script>
+<script src="index_files/libs/quarto-dashboard/components.js"></script>
+
+<meta name="shinylive:serviceworker_dir" content=".">
+<script src="index_files/libs/quarto-contrib/shinylive-0.9.1/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="index_files/libs/quarto-contrib/shinylive-0.9.1/shinylive/run-python-blocks.js" type="module"></script>
+<link href="index_files/libs/quarto-contrib/shinylive-0.9.1/shinylive/shinylive.css" rel="stylesheet">
+<link href="index_files/libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
+
+
+</head>
+
+<body class="quarto-dashboard dashboard-fill fullcontent quarto-light">
+
+<header id="quarto-dashboard-header">
+<nav class="navbar navbar-expand-md slim" data-bs-theme="dark">
+  <div class="navbar-container container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-controls="dashboard-collapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>    
+
+
+    <div class="navbar-brand-container">
+
+
+      <div class="navbar-title">
+        <div class="navbar-title-text"><a href="#">Grass Senescence Atlas</a></div>
+        
+        
+      </div>
+    </div>
+<div id="dashboard-collapse" class="navbar-collapse collapse"><ul class="navbar-nav navbar-nav-scroll me-auto" role="tablist"><li class="nav-item" role="presentation"><a id="tab-dashboard" class="nav-link active" data-bs-toggle="tab" role="tab" data-bs-target="#dashboard" data-scrolling="false" href="#dashboard" aria-controls="dashboard" aria-selected="true"><span class="nav-link-text">Dashboard</span></a></li></ul></div></div>
+</nav>
+</header>
+<div class="page-layout-custom quarto-dashboard-content bslib-gap-spacing html-fill-container bslib-page-fill quarto-dashboard-pages">  
+
+<div class="bslib-grid-item html-fill-item tab-content bslib-grid" data-layout="fill" style="display: grid; grid-template-rows: minmax(3em, 1fr); grid-auto-columns: minmax(0, 1fr);">
+<div id="dashboard" class="dashboard-page tab-pane show active html-fill-item html-fill-container" data-orientation="rows" aria-labelledby="tab-dashboard">
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
+<div class="card html-fill-item html-fill-container bslib-card" data-fill="false" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 900
+#| resources:
+#|   - vst_full_xz.rds
+#|   - metadata.rds
+#|   - mapping_full_xz.rds
+#|   - 09_TOM_UMAP_embedding_leaf.csv
+#|   - 09_top_edges_leaf.csv
+#|   - leaf_network_maizeminedescription.txt
+#|   - module_plots/module_m1_turquoise.png
+#|   - module_plots/module_m2_blue.png
+#|   - module_plots/module_m3_brown.png
+#|   - module_plots/module_m4_yellow.png
+#|   - module_plots/module_m5_green.png
+#|   - module_plots/module_m6_red.png
+#|   - module_plots/module_m7_black.png
+#|   - module_plots/module_m8_pink.png
+#|   - module_plots/module_m9_magenta.png
+#|   - module_plots/module_m10_purple.png
+#|   - 09_TOM_UMAP_embedding_underground.csv
+#|   - 09_top_edges_underground.csv
+#|   - 08_module_eigengenes_samples_underground.csv
+#|   - und_network_maizeminedescription.txt
+#|   - module_plots_underground/module_um1_turquoise.png
+#|   - module_plots_underground/module_um2_blue.png
+#|   - module_plots_underground/module_um3_brown.png
+#|   - module_plots_underground/module_um4_yellow.png
+#|   - module_plots_underground/module_um5_green.png
+#|   - module_plots_underground/module_um6_red.png
+#|   - module_plots_underground/module_um7_black.png
+#|   - module_plots_underground/module_um9_magenta.png
+#|   - welcome_assets/species_tree.png
+#|   - welcome_assets/umap_atlas.png
+#|   - welcome_assets/methodology_summary.png
+#|   - welcome_assets/gdd_plot.png
+
+library(shiny)
+library(bslib)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(base64enc)
+
+# --- 1. DATA LOADING (Must be at the TOP) ---
+if (!file.exists("vst_full_xz.rds")) download.file("http://localhost:8000/vst_full_xz.rds", "vst_full_xz.rds")
+if (!file.exists("metadata.rds")) download.file("http://localhost:8000/metadata.rds", "metadata.rds")
+if (!file.exists("mapping_full_xz.rds")) download.file("http://localhost:8000/mapping_full_xz.rds", "mapping_full_xz.rds")
+if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file("http://localhost:8000/09_TOM_UMAP_embedding_leaf.csv", "09_TOM_UMAP_embedding_leaf.csv")
+if (!file.exists("09_top_edges_leaf.csv")) download.file("http://localhost:8000/09_top_edges_leaf.csv", "09_top_edges_leaf.csv")
+if (!file.exists("leaf_network_maizeminedescription.txt")) download.file("http://localhost:8000/leaf_network_maizeminedescription.txt", "leaf_network_maizeminedescription.txt")
+if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file("http://localhost:8000/09_TOM_UMAP_embedding_underground.csv", "09_TOM_UMAP_embedding_underground.csv")
+if (!file.exists("09_top_edges_underground.csv")) download.file("http://localhost:8000/09_top_edges_underground.csv", "09_top_edges_underground.csv")
+if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file("http://localhost:8000/08_module_eigengenes_samples_underground.csv", "08_module_eigengenes_samples_underground.csv")
+if (!file.exists("und_network_maizeminedescription.txt")) download.file("http://localhost:8000/und_network_maizeminedescription.txt", "und_network_maizeminedescription.txt")
+
+vst_counts &lt;- readRDS("vst_full_xz.rds")
+metadata &lt;- readRDS("metadata.rds")
+gene_og_map &lt;- readRDS("mapping_full_xz.rds")
+# Pre-compute default OG at load time to ensure instant startup render
+.default_og &lt;- tryCatch({
+  m &lt;- gene_og_map$Orthogroup[gene_og_map$GeneID == "Zm00001eb319560"]
+  if (length(m) &gt; 0 &amp;&amp; !is.na(m[1])) m[1] else "OG0007133"
+}, error = function(e) "OG0007133")
+umap_df &lt;- read.csv("09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
+desc_df &lt;- read.delim("leaf_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+edges_df &lt;- read.csv("09_top_edges_leaf.csv", stringsAsFactors = FALSE)
+
+und_umap_df &lt;- read.csv("09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
+und_desc_df &lt;- read.delim("und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+und_edges_df &lt;- read.csv("09_top_edges_underground.csv", stringsAsFactors = FALSE)
+
+dir.create("welcome_assets", showWarnings = FALSE)
+if (!file.exists("welcome_assets/species_tree.png")) {
+  tryCatch(download.file("http://localhost:8000/welcome_assets/species_tree.png", "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/umap_atlas.png")) {
+  tryCatch(download.file("http://localhost:8000/welcome_assets/umap_atlas.png", "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/methodology_summary.png")) {
+  tryCatch(download.file("http://localhost:8000/welcome_assets/methodology_summary.png", "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/gdd_plot.png")) {
+  tryCatch(download.file("http://localhost:8000/welcome_assets/gdd_plot.png", "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
+}
+
+welcome_b64 &lt;- list(
+  species_tree = if(file.exists("welcome_assets/species_tree.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/species_tree.png")) else "",
+  umap_atlas = if(file.exists("welcome_assets/umap_atlas.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/umap_atlas.png")) else "",
+  methodology_summary = if(file.exists("welcome_assets/methodology_summary.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/methodology_summary.png")) else "",
+  gdd_plot = if(file.exists("welcome_assets/gdd_plot.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/gdd_plot.png")) else ""
+)
+
+# Pre-load all module PNGs as base64 data URIs at startup so they render instantly
+dir.create("module_plots", showWarnings = FALSE)
+module_names &lt;- c("m1_turquoise", "m2_blue", "m3_brown", "m4_yellow", "m5_green",
+                  "m6_red", "m7_black", "m8_pink", "m9_magenta", "m10_purple")
+module_plots_b64 &lt;- setNames(lapply(module_names, function(mod) {
+  local_path &lt;- paste0("module_plots/module_", mod, ".png")
+  if (!file.exists(local_path)) {
+    tryCatch(
+      download.file(paste0("http://localhost:8000/module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
+      error = function(e) NULL
+    )
+  }
+  if (file.exists(local_path)) {
+    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
+  } else NA_character_
+}), module_names)
+
+dir.create("module_plots_underground", showWarnings = FALSE)
+und_module_names &lt;- c("um1_turquoise", "um2_blue", "um3_brown", "um4_yellow", "um5_green",
+                      "um6_red", "um7_black", "um8_pink", "um9_magenta")
+und_module_plots_b64 &lt;- setNames(lapply(und_module_names, function(mod) {
+  local_path &lt;- paste0("module_plots_underground/module_", mod, ".png")
+  if (!file.exists(local_path)) {
+    tryCatch(
+      download.file(paste0("http://localhost:8000/module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
+      error = function(e) NULL
+    )
+  }
+  if (file.exists(local_path)) {
+    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
+  } else NA_character_
+}), und_module_names)
+
+# Add Zea mays Gene IDs to the UMAP data for hover text using the description file
+zm_map &lt;- desc_df %&gt;% 
+  group_by(OG) %&gt;%
+  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+
+umap_df &lt;- umap_df %&gt;%
+  left_join(zm_map, by = c("gene" = "OG")) %&gt;%
+  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+
+# Pre-join UMAP coordinates onto edges so we don't recalculate in every reactive update
+umap_coords &lt;- umap_df %&gt;% select(gene, UMAP1, UMAP2)
+edges_df &lt;- edges_df %&gt;%
+  left_join(umap_coords, by = c("from" = "gene")) %&gt;%
+  rename(x0 = UMAP1, y0 = UMAP2) %&gt;%
+  left_join(umap_coords, by = c("to" = "gene")) %&gt;%
+  rename(x1 = UMAP1, y1 = UMAP2) %&gt;%
+  filter(!is.na(x0), !is.na(x1))
+
+# --- Pre-processing Underground ---
+und_zm_map &lt;- und_desc_df %&gt;% 
+  group_by(OG) %&gt;%
+  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+
+und_umap_df &lt;- und_umap_df %&gt;%
+  left_join(und_zm_map, by = c("gene" = "OG")) %&gt;%
+  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+
+und_umap_coords &lt;- und_umap_df %&gt;% select(gene, UMAP1, UMAP2)
+und_edges_df &lt;- und_edges_df %&gt;%
+  left_join(und_umap_coords, by = c("from" = "gene")) %&gt;%
+  rename(x0 = UMAP1, y0 = UMAP2) %&gt;%
+  left_join(und_umap_coords, by = c("to" = "gene")) %&gt;%
+  rename(x1 = UMAP1, y1 = UMAP2) %&gt;%
+  filter(!is.na(x0), !is.na(x1))
+
+
+# --- 2. PALETTES ---
+species_palette &lt;- c(
+  "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Bothriochloa_laguroides"="#2CA02C",
+  "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD", "Miscanthus_giganteus"="#8C564B",
+  "Panicum_virgatum"="#98DF8A", "Schizachyrium_scoparium"="#E377C2", "Sorghastrum_nutans"="#7F7F7F",
+  "Sorghum_bicolor"="#FF9896", "Themeda_triandra"="#E6AB02", "Tripsacum_dactyloides"="#17BECF",
+  "Zea_diploperennis"="#BCBD22", "Zea_mays"="#36eb11"
+)
+accession_palette_named &lt;- c(
+  "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Ag_Niagara"="#A6CEE3",
+  "Bothriochloa_laguroides"="#2CA02C", "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD",
+  "Miscanthus_giganteus"="#8C564B", "Panicum_virgatum_A1"="#98DF8A", "Panicum_virgatum_Kanlow"="#2CA02C",
+  "Pv_Liberty"="#f69400", "Schizachyrium_scoparium"="#E377C2", "Sorghastrum_nutans"="#7F7F7F",
+  "Sn_WI"="#993404", "Sorghum_bicolor"="#FF9896", "Sb_BTx623"="#67000D", "Ss_Ahring"="#B3DE69",
+  "Td_floridanum"="#B2DF8A", "Td_IL"="#66C2A5", "Td_KS_B6"="#1F78B4", "Td_KS_C9"="#6A3D9A",
+  "Td_McKain"="#A6CEE3", "Td_MO"="#B2E2E2", "Td_OK"="#63A3CB", "Td_Pete"="#0ad2e4",
+  "Td_TX"="#084081", "Td_Iuka"="#0f93e4", "Td_Texas_Sue"="#0cc688", "Themeda_triandra"="#E6AB02",
+  "Zea_diploperennis"="#BCBD22", "Zd_momo"="#006D2C", "Zm_lh244"="#36eb11", "Zm_lh287Xlh244"="#77e204"
+)
+tissue_type_palette &lt;- c("leaf" = "#30e004", "root" = "#ee6766", "stem" = "#07cde3")
+life_history_palette &lt;- c("annual" = "#B1ECB8", "perennial" = "#D3E4F5")
+
+# --- 3. HELPER LOGIC ---
+week_lookup &lt;- data.frame(
+  week = 1:14,
+  julian = c(208, 215, 222, 229, 235, 242, 248, 256, 263, 270, 277, 284, 290, 298),
+  month = c("July", "Aug", "Aug", "Aug", "Aug", "Sept", "Sept", "Sept", "Sept", "Oct", "Oct", "Oct", "Oct", "Oct")
+)
+month_unique &lt;- week_lookup %&gt;%
+  group_by(month) %&gt;%
+  summarise(start = min(week), end = max(week), mid = mean(c(min(week), max(week))))
+
+# --- 4. UI ---
+ui &lt;- page_navbar(
+  title = "Atlas Dashboard",
+  theme = bs_theme(version = 5, bootswatch = "flatly"),
+  header = tags$script(HTML("
+    $(document).on('shiny:connected', function() {
+      setTimeout(function() {
+        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
+      }, 800);
+    });
+  ")),
+  
+  # === TAB 0: WELCOME ===
+  nav_panel(
+    title = "The Grass Senescence Atlas",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "About This Dashboard",
+        p("Interactively access the transcriptomic data featured in the paper:"),
+        tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks limit nitrogen recycling in annuals"),
+        br(),
+        tags$a("Link to the article", href = "#", target = "_blank"),
+        hr(),
+        h5("How to Use"),
+        tags$b("1. Expression Explorer"),
+        p("Filter and visualize gene expression profiles across different species, tissues, and timepoints. Search using Zea mays B73 v5 annotation IDs or Orthogroup IDs."),
+        tags$b("2. Leaf Network"),
+        p("Interactive WGCNA TOM-UMAP embedding of the leaf co-expression network. Search for genes, view their top connections (highlighted in red), and examine module eigengene patterns."),
+        tags$b("3. Underground Network"),
+        p("Similar to the Leaf Network, but focused on root and stem tissue co-expression modules.")
+      ),
+      card(
+        card_header("Dataset Overview &amp; Methodology"),
+        layout_column_wrap(
+          width = 1/2,
+          card(
+            card_header("The Grass Senescence Atlas"),
+            p("This dataset encompasses:"),
+            tags$ul(
+              tags$li(tags$b("14 grass species"), " (", tags$b("31 accessions"), ")"),
+              tags$li(tags$b("2 seasons:"), " pot-in-pot field and standard field"),
+              tags$li(tags$b("3 tissues:"), " leaves, roots, stems"),
+              tags$li(tags$b("Life history:"), " perennial and annual")
+            ),
+            tags$img(src = welcome_b64[["species_tree"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            hr(),
+            h6("Expression UMAP"),
+            tags$img(src = welcome_b64[["umap_atlas"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+          ),
+          card(
+            card_header("Methodology"),
+            tags$img(src = welcome_b64[["methodology_summary"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            hr(),
+            h6("Environmental Conditions"),
+            p("Daily Growing Degree Days (GDDs; °C) plotted against Julian days for the 2023 and 2024 seasons. Yellow triangles indicate specific sampling events. The variation in GDDs reflects the range of heat units experienced by the field-grown plants, capturing the environmental progression from mid-summer through late-season senescence."),
+            tags$img(src = welcome_b64[["gdd_plot"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+          )
+        )
+      )
+    )
+  ),
+  
+  # === TAB 1: EXPRESSION EXPLORER ===
+  nav_panel(
+    title = "Expression Explorer",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Filters &amp; Settings",
+        textInput("gene_id", "Gene or Orthogroup ID:", value = "Zm00001eb319560"),
+        uiOutput("og_id_display"),
+        actionButton("gen_plot", "Generate Time-Course Plot", 
+                     class = "btn-primary w-100", style = "margin-top:6px; margin-bottom:4px;"),
+        hr(),
+        selectInput("group_var", "Grouping Variable:", 
+                    choices = c("accession", "species", "tissue", "life_history"),
+                    selected = "species"),
+        hr(),
+        h6("Subsetting:"),
+        selectizeInput("filter_tissue", "Tissue (optional):", 
+                       choices = unique(metadata$tissue), selected = "leaf", multiple = TRUE),
+        selectizeInput("filter_species", "Species (optional):", 
+                       choices = unique(metadata$species), 
+                       selected = c("Andropogon_gerardii", "Zea_mays", "Tripsacum_dactyloides", 
+                                    "Sorghum_bicolor", "Sorghastrum_nutans", "Zea_diploperennis"),
+                       multiple = TRUE),
+        selectizeInput("filter_accession", "Accession (optional):", choices = NULL, multiple = TRUE),
+        hr(),
+        span("Note: Using professional native Plotly ribbons.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("Expression Boxplot"),
+          plotlyOutput("box_plot", height = "500px")
+        ),
+        card(
+          card_header("Time-Course (Mean ± SE)"),
+          plotlyOutput("ribbon_plot", height = "500px"),
+          card_footer("Shaded ribbon: Mean ± SE. X-axis: Week | Julian Day.")
+        )
+      )
+    )
+  ),
+  
+  # === TAB 2: LEAF NETWORK EXPLORER ===
+  nav_panel(
+    title = "Leaf Network",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Network Controls",
+        textInput("net_query", "Search Gene (OG / Zea mays):", value = ""),
+        htmlOutput("net_status_msg"),
+        hr(),
+        selectInput("net_module", "Highlight Module:", 
+                    choices = c("All Modules", sort(unique(umap_df$module_label))),
+                    selected = "All Modules"),
+        hr(),
+        p("Interactive WGCNA TOM-UMAP."),
+        p("Hover over any node to see its properties."),
+        hr(),
+        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM &gt; 0.05) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("WGCNA Leaf Module Embedding"),
+          plotlyOutput("network_plot", height = "600px")
+        ),
+        card(
+          card_header("Module Details &amp; Interacting Genes"),
+          div(
+            style = "max-height: 600px; overflow-y: auto;",
+            uiOutput("module_plot_ui"),
+            h6("Selected Node Properties:"),
+            tableOutput("node_table"),
+            hr(),
+            h6("Top Interactions:"),
+            tableOutput("interactions_table")
+          )
+        )
+      )
+    )
+  ),
+  
+  # === TAB 3: UNDERGROUND NETWORK EXPLORER ===
+  nav_panel(
+    title = "Underground Network",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Network Controls",
+        textInput("und_net_query", "Search Gene (OG / Zea mays):", value = ""),
+        htmlOutput("und_net_status_msg"),
+        hr(),
+        selectInput("und_net_module", "Highlight Module:", 
+                    choices = c("All Modules", sort(unique(und_umap_df$module_label))),
+                    selected = "All Modules"),
+        hr(),
+        p("Interactive WGCNA TOM-UMAP."),
+        p("Hover over any node to see its properties."),
+        hr(),
+        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM &gt; 0.1) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("WGCNA Underground Module Embedding"),
+          plotlyOutput("und_network_plot", height = "600px")
+        ),
+        card(
+          card_header("Module Details &amp; Interacting Genes"),
+          div(
+            style = "max-height: 600px; overflow-y: auto;",
+            uiOutput("und_module_plot_ui"),
+            h6("Selected Node Properties:"),
+            tableOutput("und_node_table"),
+            hr(),
+            h6("Top Interactions:"),
+            tableOutput("und_interactions_table")
+          )
+        )
+      )
+    )
+  )
+)
+
+# --- 5. SERVER ---
+server &lt;- function(input, output, session) {
+  
+  # --- Expression Explorer Server Logic ---
+  observeEvent(input$filter_species, {
+    available_accs &lt;- metadata %&gt;% 
+      filter(species %in% input$filter_species | length(input$filter_species) == 0) %&gt;% 
+      pull(accession) %&gt;% unique() %&gt;% sort()
+    
+    defaults &lt;- c()
+    if (length(input$filter_species) &gt; 0) {
+      for (s in input$filter_species) {
+        accs_for_s &lt;- metadata %&gt;% filter(species == s) %&gt;% pull(accession) %&gt;% unique()
+        if (length(accs_for_s) == 1) defaults &lt;- c(defaults, accs_for_s)
+        else if (s == "Tripsacum_dactyloides") defaults &lt;- c(defaults, "Td_Pete")
+        else if (s == "Zea_mays") { if ("Zm_lh287Xlh244" %in% accs_for_s) defaults &lt;- c(defaults, "Zm_lh287Xlh244") }
+        else defaults &lt;- c(defaults, accs_for_s)
+      }
+    }
+    updateSelectizeInput(session, "filter_accession", choices = available_accs, selected = defaults, server = TRUE)
+  }, ignoreNULL = FALSE)
+
+  target_og &lt;- reactive({
+    query_id &lt;- str_trim(input$gene_id)
+    if (query_id == "") return(NULL)
+    if (str_starts(query_id, "OG")) {
+      if (query_id %in% rownames(vst_counts)) return(query_id)
+    } else {
+      match_row &lt;- gene_og_map %&gt;% filter(GeneID == query_id)
+      if (nrow(match_row) &gt; 0) return(match_row$Orthogroup[1])
+    }
+    return(NULL)
+  })
+  
+  output$og_id_display &lt;- renderUI({
+    og &lt;- target_og()
+    query &lt;- str_trim(input$gene_id)
+    if (is.null(og)) {
+      span("ID not found or not in atlas", style = "color: #e44; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    } else if (str_starts(query, "OG")) {
+      span(paste0(og, " \u2713"), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    } else {
+      span(paste("Mapped Orthogroup:", og), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    }
+  })
+
+  # gene_data: triggered by button click OR runs once at startup (ignoreNULL = FALSE)
+  gene_data &lt;- eventReactive(input$gen_plot, {
+    query_id &lt;- str_trim(input$gene_id)
+    # Fast lookup: if OG ID, use directly; otherwise use gene_og_map
+    tog &lt;- if (str_starts(query_id, "OG") &amp;&amp; query_id %in% rownames(vst_counts)) {
+      query_id
+    } else if (query_id == "Zm00001eb319560" || query_id == "") {
+      .default_og  # use pre-computed value, avoids slow lookup at startup
+    } else {
+      m &lt;- gene_og_map$Orthogroup[gene_og_map$GeneID == query_id]
+      if (length(m) &gt; 0) m[1] else NULL
+    }
+    req(tog)
+    
+    expr_vals &lt;- vst_counts[tog, ]
+    df &lt;- data.frame(sample_id = names(expr_vals), expression = as.numeric(expr_vals)) %&gt;%
+      inner_join(metadata, by = "sample_id")
+    
+    if (length(input$filter_tissue) &gt; 0) df &lt;- df %&gt;% filter(tissue %in% input$filter_tissue)
+    if (length(input$filter_species) &gt; 0) df &lt;- df %&gt;% filter(species %in% input$filter_species)
+    if (length(input$filter_accession) &gt; 0) df &lt;- df %&gt;% filter(accession %in% input$filter_accession)
+    df
+  }, ignoreNULL = FALSE)
+
+  y_range &lt;- reactive({
+    df &lt;- gene_data(); req(nrow(df) &gt; 0)
+    range(df$expression, na.rm = TRUE)
+  })
+
+  active_palette &lt;- reactive({
+    gv &lt;- input$group_var
+    if (gv == "life_history") life_history_palette
+    else if (gv == "tissue") tissue_type_palette
+    else if (gv == "species") species_palette
+    else if (gv == "accession") accession_palette_named
+    else c(accession_palette_named, species_palette, tissue_type_palette, life_history_palette)
+  })
+
+  output$ribbon_plot &lt;- renderPlotly({
+    df &lt;- gene_data(); req(nrow(df) &gt; 0)
+    
+    summary_df &lt;- df %&gt;%
+      distinct(sample_id, .keep_all = TRUE) %&gt;%
+      group_by(week, group = as.character(.data[[input$group_var]])) %&gt;%
+      summarise(mean_expr = mean(expression, na.rm = TRUE), se_expr = sd(expression, na.rm = TRUE) / sqrt(n()), .groups = "drop") %&gt;%
+      left_join(week_lookup, by = "week") %&gt;%
+      arrange(group, week) %&gt;% filter(!is.na(mean_expr))
+    
+    yr &lt;- y_range(); y_min &lt;- yr[1]; y_max &lt;- yr[2]; buffer &lt;- (y_max - y_min) * 0.1
+    y_lim_top &lt;- y_max + buffer; tile_height &lt;- (y_max - y_min) * 0.15; y_plot_top &lt;- y_lim_top + tile_height
+    
+    p &lt;- plot_ly()
+    groups &lt;- unique(summary_df$group)
+    for (g in groups) {
+      g_data &lt;- summary_df %&gt;% filter(group == g)
+      color_hex &lt;- if (g %in% names(active_palette())) active_palette()[g] else "#333333"
+      
+      p &lt;- p %&gt;% add_polygons(
+        x = c(g_data$week, rev(g_data$week)), y = c(g_data$mean_expr + g_data$se_expr, rev(g_data$mean_expr - g_data$se_expr)),
+        fillcolor = color_hex, opacity = 0.2, line = list(color = "transparent"), name = g, showlegend = FALSE, connectgaps = TRUE
+      ) %&gt;% add_trace(
+        x = g_data$week, y = g_data$mean_expr, type = "scatter", mode = "lines+markers",
+        line = list(color = color_hex, width = 3), marker = list(color = color_hex, size = 8), name = g,
+        hovertext = paste0("Group: ", g, "&lt;br&gt;Week: ", g_data$week, "&lt;br&gt;Mean VST: ", round(g_data$mean_expr, 2)),
+        hoverinfo = "text", connectgaps = TRUE
+      )
+    }
+    
+    shapes &lt;- list(); annotations &lt;- list(); month_colors &lt;- c("July"="#228B22", "Aug"="#7CFC00", "Sept"="#ADFF2F", "Oct"="#FFFF00")
+    for(i in 1:nrow(month_unique)) {
+      m &lt;- month_unique[i,]
+      shapes[[i]] &lt;- list(type = "rect", fillcolor = month_colors[m$month], line = list(color = "black", width = 1),
+                          opacity = 0.4, x0 = m$start - 0.5, x1 = m$end + 0.5, y0 = y_lim_top, y1 = y_plot_top, xref = "x", yref = "y")
+      annotations[[i]] &lt;- list(x = m$mid, y = y_lim_top + (tile_height / 2), text = m$month, showarrow = FALSE, font = list(size = 12, color = "black", weight = "bold"))
+    }
+    
+    p %&gt;% layout(
+      xaxis = list(title = "Week | Julian Day", tickvals = 1:14, ticktext = paste0("w", week_lookup$week, "|", week_lookup$julian), tickangle = 45),
+      yaxis = list(title = "expression (normalized VST-counts)", range = c(y_min - buffer, y_plot_top)),
+      shapes = shapes, annotations = annotations, showlegend = FALSE,
+      margin = list(t = 50)
+    )
+  })
+
+  output$box_plot &lt;- renderPlotly({
+    df &lt;- gene_data(); req(nrow(df) &gt; 0)
+    yr &lt;- y_range(); y_min &lt;- yr[1]; y_max &lt;- yr[2]; buffer &lt;- (y_max - y_min) * 0.1
+    p &lt;- ggplot(df, aes(x = .data[[input$group_var]], y = expression, fill = .data[[input$group_var]])) +
+      geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+      geom_jitter(aes(text = paste("Sample:", sample_id, "&lt;br&gt;VST:", round(expression, 2))), width = 0.2, alpha = 0.3, size = 1) +
+      scale_fill_manual(values = active_palette()) +
+      coord_cartesian(ylim = c(y_min - buffer, y_max + (buffer * 2.5))) +
+      theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
+      labs(y = "expression (normalized VST-counts)", x = NULL)
+    ggplotly(p, tooltip = "text")
+  })
+  
+  # Force plots to render even when Expression Explorer tab is not active
+  outputOptions(output, "ribbon_plot", suspendWhenHidden = FALSE)
+  outputOptions(output, "box_plot",    suspendWhenHidden = FALSE)
+  
+  # --- Network Explorer Server Logic ---
+  net_target_og_raw &lt;- reactive({
+    query_id &lt;- str_trim(input$net_query)
+    if (query_id == "") return(NULL)
+    if (str_starts(query_id, "OG")) {
+      return(query_id)
+    } else {
+      match_row &lt;- gene_og_map %&gt;% filter(GeneID == query_id)
+      if (nrow(match_row) &gt; 0) return(match_row$Orthogroup[1])
+    }
+    return(query_id) 
+  })
+  
+  net_target_og &lt;- net_target_og_raw %&gt;% debounce(500)
+
+  output$net_status_msg &lt;- renderUI({
+    query_id &lt;- str_trim(input$net_query)
+    if (query_id == "") return(NULL)
+    tog &lt;- net_target_og()
+    if (is.null(tog)) return(NULL)
+    
+    if (!(tog %in% umap_df$gene)) {
+      return(tags$div("Not found in network", style = "color: red; font-weight: bold; margin-top: 10px;"))
+    } else {
+      return(tags$div("Orthogroup highlighted!", style = "color: green; font-weight: bold; margin-top: 10px;"))
+    }
+  })
+
+  # Clear search box whenever user clicks a node directly
+  observeEvent(event_data("plotly_click", source = "network_view"), {
+    updateTextInput(session, "net_query", value = "")
+  })
+
+  output$network_plot &lt;- renderPlotly({
+    req(nrow(umap_df) &gt; 0)
+    plot_data &lt;- umap_df
+    edge_data &lt;- edges_df
+    tog   &lt;- net_target_og()           # from search box
+    click &lt;- event_data("plotly_click", source = "network_view")
+    clicked_gene &lt;- if (!is.null(click)) click$key else NULL
+    
+    # Active highlight: search query takes priority, then click
+    active_gene &lt;- if (!is.null(tog) &amp;&amp; str_trim(input$net_query) != "") tog else clicked_gene
+    
+    is_query_active &lt;- !is.null(active_gene)
+    is_query_found  &lt;- is_query_active &amp;&amp; (active_gene %in% plot_data$gene)
+    
+    # --- Compute node display properties ---
+    if (is_query_active &amp;&amp; !is_query_found) {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
+    } else if (is_query_found) {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(
+          display_color = ifelse(gene == active_gene, color, "lightgrey"),
+          display_opacity = ifelse(gene == active_gene, 1, 0.15),
+          display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))
+        ) %&gt;%
+        arrange(gene == active_gene)
+    } else if (input$net_module != "All Modules") {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(
+          display_color = ifelse(module_label == input$net_module, color, "lightgrey"),
+          display_opacity = ifelse(module_label == input$net_module, 0.9, 0.15),
+          display_size = pmax(kME * 15, 3)
+        )
+    } else {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+    }
+    
+    # --- Compute edge display properties ---
+    if (is_query_active &amp;&amp; !is_query_found) {
+      edge_data &lt;- edge_data %&gt;%
+        mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
+    } else if (is_query_found) {
+      is_connected &lt;- edge_data$from == active_gene | edge_data$to == active_gene
+      edge_data &lt;- edge_data %&gt;%
+        mutate(
+          edge_color   = ifelse(is_connected, "red", "lightgrey"),
+          edge_opacity = ifelse(is_connected, 0.8, 0.02),
+          edge_width   = ifelse(is_connected, 2, 0.5)
+        ) %&gt;%
+        arrange(is_connected)
+    } else {
+      edge_data &lt;- edge_data %&gt;%
+        mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    }
+    
+    p &lt;- plot_ly(source = "network_view")
+    
+    # --- Draw edges first (so nodes appear on top) ---
+    # Split into highlighted vs background to allow separate opacity control
+    bg_edges &lt;- edge_data %&gt;% filter(edge_opacity &lt; 0.5)
+    hi_edges &lt;- edge_data %&gt;% filter(edge_opacity &gt;= 0.5)
+    
+    if (nrow(bg_edges) &gt; 0) {
+      p &lt;- p %&gt;% add_segments(
+        data = bg_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "lightgrey", width = 0.5),
+        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    if (nrow(hi_edges) &gt; 0) {
+      p &lt;- p %&gt;% add_segments(
+        data = hi_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "red", width = 2),
+        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    
+    # --- Draw nodes on top of edges ---
+    p &lt;- p %&gt;% add_trace(
+      data = plot_data,
+      x = ~UMAP1, y = ~UMAP2,
+      type = "scatter", mode = "markers",
+      marker = list(
+        color = ~display_color,
+        size = ~display_size,
+        opacity = ~display_opacity,
+        line = list(color = "white", width = 0.5)
+      ),
+      text = ~paste0("OG: ", gene, "&lt;br&gt;Zea mays: ", Zea_mays_genes, "&lt;br&gt;Module: ", module_label, "&lt;br&gt;kME: ", round(kME, 3)),
+      hoverinfo = "text",
+      key = ~gene,
+      showlegend = FALSE
+    )
+    
+    p %&gt;% layout(
+      xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+      yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+      hovermode = "closest"
+    )
+  })
+  
+  output$node_table &lt;- renderTable({
+    click_data &lt;- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene &lt;- click_data$key
+    
+    node_info &lt;- umap_df %&gt;%
+      filter(gene == clicked_gene) %&gt;%
+      select(
+        Orthogroup = gene,
+        `Zea mays Gene` = Zea_mays_genes,
+        Module = module_label,
+        kME = kME
+      ) %&gt;%
+      separate_rows(`Zea mays Gene`, sep = ", ")
+      
+    # Extract desc columns by index: 1=gene_id, 5=sink_source, 6=hub_ranking_kME, 7=description
+    desc_subset &lt;- data.frame(
+      gene_id_Zm    = desc_df[[1]],
+      sink_source   = as.character(desc_df[[5]]),
+      hub_score     = as.numeric(desc_df[[6]]),
+      Description   = as.character(desc_df[[7]]),
+      stringsAsFactors = FALSE
+    )
+    
+    node_info &lt;- node_info %&gt;%
+      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %&gt;%
+      mutate(
+        Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
+        sink_source   = ifelse(is.na(sink_source), "—", sink_source),
+        `kME (Hub Score)` = round(kME, 3),
+        `Zea mays Gene` = ifelse(
+          `Zea mays Gene` != "None" &amp; `Zea mays Gene` != "",
+          paste0('&lt;a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank"&gt;', `Zea mays Gene`, '&lt;/a&gt;'),
+          "None"
+        )
+      ) %&gt;%
+      select(
+        Orthogroup,
+        `Zea mays Gene`,
+        Module,
+        `Sink/Source` = sink_source,
+        `kME (Hub Score)`,
+        Description
+      )
+    
+    return(node_info)
+  }, sanitize.text.function = function(x) x)
+
+  output$module_plot_ui &lt;- renderUI({
+    click_data &lt;- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene &lt;- click_data$key
+    mod &lt;- umap_df %&gt;% filter(gene == clicked_gene) %&gt;% pull(module_label)
+    if (length(mod) == 0) return(NULL)
+    mod &lt;- mod[1]
+    
+    b64_src &lt;- module_plots_b64[[mod]]
+    if (is.null(b64_src) || is.na(b64_src)) {
+      return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
+    }
+    
+    tagList(
+      h6(paste0("Module Eigengene Pattern: ", mod)),
+      tags$img(
+        src   = b64_src,
+        style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"
+      ),
+      hr()
+    )
+  })
+
+  output$interactions_table &lt;- renderTable({
+    click_data &lt;- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene &lt;- click_data$key
+    
+    # Find all edges involving this gene
+    connected &lt;- edges_df %&gt;%
+      filter(from == clicked_gene | to == clicked_gene) %&gt;%
+      mutate(partner = ifelse(from == clicked_gene, to, from)) %&gt;%
+      select(partner, weight) %&gt;%
+      arrange(desc(weight))
+    
+    if (nrow(connected) == 0) return(NULL)
+    
+    # Build a simple lookup using column positions to avoid complex name issues
+    desc_lookup &lt;- data.frame(
+      OG          = desc_df[[2]],
+      zm_gene     = desc_df[[1]],
+      description = as.character(desc_df[[7]]),
+      stringsAsFactors = FALSE
+    ) %&gt;%
+      group_by(OG) %&gt;%
+      summarise(
+        `Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
+        Description     = {
+          descs &lt;- unique(description[description != "" &amp; !is.na(description)])
+          if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
+        },
+        .groups = "drop"
+      )
+    
+    connected %&gt;%
+      left_join(desc_lookup, by = c("partner" = "OG")) %&gt;%
+      mutate(
+        Description     = ifelse(is.na(Description), "No description available", Description),
+        `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
+        weight          = round(weight, 4)
+      ) %&gt;%
+      rename(
+        `Partner OG` = partner,
+        `TOM Weight` = weight
+      )
+  })
+
+  # === UNDERGROUND NETWORK LOGIC ===
+  und_net_target_og &lt;- reactive({
+    query &lt;- str_trim(input$und_net_query)
+    if (query == "") return(NULL)
+    if (query %in% und_umap_df$gene) return(query)
+    match_og &lt;- und_umap_df %&gt;% filter(str_detect(Zea_mays_genes, query)) %&gt;% pull(gene)
+    if (length(match_og) &gt; 0) return(match_og[1])
+    return(NULL)
+  })
+
+  output$und_net_status_msg &lt;- renderUI({
+    tog &lt;- und_net_target_og()
+    if (str_trim(input$und_net_query) == "") return(NULL)
+    if (is.null(tog)) {
+      span("Gene not found in network.", style = "color: #d9534f; font-size: 0.9em; font-weight: bold;")
+    } else {
+      span(paste("Highlighted:", tog), style = "color: #5cb85c; font-size: 0.9em; font-weight: bold;")
+    }
+  })
+
+  observeEvent(event_data("plotly_click", source = "und_network_view"), {
+    updateTextInput(session, "und_net_query", value = "")
+  })
+
+  output$und_network_plot &lt;- renderPlotly({
+    req(nrow(und_umap_df) &gt; 0)
+    plot_data &lt;- und_umap_df
+    edge_data &lt;- und_edges_df
+    tog   &lt;- und_net_target_og()
+    click &lt;- event_data("plotly_click", source = "und_network_view")
+    clicked_gene &lt;- if (!is.null(click)) click$key else NULL
+    active_gene &lt;- if (!is.null(tog) &amp;&amp; str_trim(input$und_net_query) != "") tog else clicked_gene
+    is_query_active &lt;- !is.null(active_gene)
+    is_query_found  &lt;- is_query_active &amp;&amp; (active_gene %in% plot_data$gene)
+
+    if (is_query_active &amp;&amp; !is_query_found) {
+      plot_data &lt;- plot_data %&gt;% mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
+      edge_data &lt;- edge_data %&gt;% mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
+    } else if (is_query_found) {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(display_color = ifelse(gene == active_gene, color, "lightgrey"),
+               display_opacity = ifelse(gene == active_gene, 1, 0.15),
+               display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))) %&gt;%
+        arrange(gene == active_gene)
+      is_connected &lt;- edge_data$from == active_gene | edge_data$to == active_gene
+      edge_data &lt;- edge_data %&gt;%
+        mutate(edge_color = ifelse(is_connected, "red", "lightgrey"),
+               edge_opacity = ifelse(is_connected, 0.8, 0.02),
+               edge_width = ifelse(is_connected, 2, 0.5)) %&gt;%
+        arrange(is_connected)
+    } else if (input$und_net_module != "All Modules") {
+      plot_data &lt;- plot_data %&gt;%
+        mutate(display_color = ifelse(module_label == input$und_net_module, color, "lightgrey"),
+               display_opacity = ifelse(module_label == input$und_net_module, 0.9, 0.15),
+               display_size = pmax(kME * 15, 3))
+      edge_data &lt;- edge_data %&gt;% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    } else {
+      plot_data &lt;- plot_data %&gt;% mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+      edge_data &lt;- edge_data %&gt;% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    }
+
+    p &lt;- plot_ly(source = "und_network_view")
+    
+    # --- Split into highlighted vs background to allow separate opacity control ---
+    bg_edges &lt;- edge_data %&gt;% filter(edge_opacity &lt; 0.5)
+    hi_edges &lt;- edge_data %&gt;% filter(edge_opacity &gt;= 0.5)
+    
+    if (nrow(bg_edges) &gt; 0) {
+      p &lt;- p %&gt;% add_segments(
+        data = bg_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "lightgrey", width = 0.5),
+        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    if (nrow(hi_edges) &gt; 0) {
+      p &lt;- p %&gt;% add_segments(
+        data = hi_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "red", width = 2),
+        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+
+    p &lt;- p %&gt;% add_trace(data = plot_data, x = ~UMAP1, y = ~UMAP2, type = "scatter", mode = "markers",
+                key = ~gene, marker = list(size = ~display_size, color = ~display_color,
+                                           opacity = ~display_opacity, line = list(width = 0.5, color = "white")),
+                text = ~paste0("&lt;b&gt;OG:&lt;/b&gt; ", gene, "&lt;br&gt;&lt;b&gt;ZmID:&lt;/b&gt; ", Zea_mays_genes,
+                               "&lt;br&gt;&lt;b&gt;Module:&lt;/b&gt; ", module_label, "&lt;br&gt;&lt;b&gt;kME:&lt;/b&gt; ", round(kME, 3)),
+                hoverinfo = "text") %&gt;%
+      layout(xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             hovermode = "closest")
+    p
+  })
+
+  output$und_node_table &lt;- renderTable({
+    click_data &lt;- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene &lt;- click_data$key
+    node_info &lt;- und_umap_df %&gt;%
+      filter(gene == clicked_gene) %&gt;%
+      select(Orthogroup = gene, `Zea mays Gene` = Zea_mays_genes, Module = module_label, kME = kME) %&gt;%
+      separate_rows(`Zea mays Gene`, sep = ", ")
+    
+    # und_desc_df mapping: 1=gene_id, 2=OG, 5=hub_score, 6=description
+    desc_subset &lt;- data.frame(
+      gene_id_Zm    = und_desc_df[[1]],
+      hub_score     = as.numeric(und_desc_df[[5]]),
+      Description   = as.character(und_desc_df[[6]]),
+      stringsAsFactors = FALSE
+    )
+    
+    node_info &lt;- node_info %&gt;%
+      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %&gt;%
+      mutate(Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
+             `kME (Hub Score)` = round(kME, 3),
+             `Zea mays Gene` = ifelse(`Zea mays Gene` != "None" &amp; `Zea mays Gene` != "",
+                                      paste0('&lt;a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank"&gt;', `Zea mays Gene`, '&lt;/a&gt;'), "None")) %&gt;%
+      select(Orthogroup, `Zea mays Gene`, Module, `kME (Hub Score)`, Description)
+    return(node_info)
+  }, sanitize.text.function = function(x) x)
+
+  output$und_module_plot_ui &lt;- renderUI({
+    click_data &lt;- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene &lt;- click_data$key
+    mod &lt;- und_umap_df %&gt;% filter(gene == clicked_gene) %&gt;% pull(module_label)
+    if (length(mod) == 0) return(NULL)
+    mod &lt;- mod[1]
+    b64_src &lt;- und_module_plots_b64[[mod]]
+    if (is.null(b64_src) || is.na(b64_src)) return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
+    tagList(
+      h6(paste0("Module Eigengene Pattern: ", mod)),
+      tags$img(src = b64_src, style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"),
+      hr()
+    )
+  })
+
+  output$und_interactions_table &lt;- renderTable({
+    click_data &lt;- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene &lt;- click_data$key
+    connected &lt;- und_edges_df %&gt;%
+      filter(from == clicked_gene | to == clicked_gene) %&gt;%
+      mutate(partner = ifelse(from == clicked_gene, to, from)) %&gt;%
+      select(partner, weight) %&gt;%
+      arrange(desc(weight))
+    if (nrow(connected) == 0) return(NULL)
+    
+    desc_lookup &lt;- data.frame(OG = und_desc_df[[2]], zm_gene = und_desc_df[[1]], description = as.character(und_desc_df[[6]]), stringsAsFactors = FALSE) %&gt;%
+      group_by(OG) %&gt;%
+      summarise(`Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
+                Description = {
+                  descs &lt;- unique(description[description != "" &amp; !is.na(description)])
+                  if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
+                }, .groups = "drop")
+    
+    connected %&gt;%
+      left_join(desc_lookup, by = c("partner" = "OG")) %&gt;%
+      mutate(Description = ifelse(is.na(Description), "No description available", Description),
+             `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
+             weight = round(weight, 4)) %&gt;%
+      rename(`Partner OG` = partner, `TOM Weight` = weight)
+  })
+}
+
+shinyApp(ui, server)</code></pre>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+<div id="3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9" class="hidden html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+</div>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /container fluid -->
+
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (_event) {
+  if (window.bslib.Card) {
+    window.bslib.Card.initializeAllCards();
+  }
+}); 
+</script>
+  
+
+
+
+</body></html>
