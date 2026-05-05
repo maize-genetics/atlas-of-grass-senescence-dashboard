@@ -96,6 +96,23 @@ ul.task-list li input[type="checkbox"] {
   </div>
   <style>@keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }</style>
 </div>
+<script>
+  var checkShinyUI = setInterval(function() {
+    if (document.getElementById('gene_id')) {
+      clearInterval(checkShinyUI);
+      var el = document.getElementById('loading-overlay');
+      if (el) { 
+        el.style.opacity = '0'; 
+        setTimeout(function(){ el.remove(); }, 700); 
+      }
+      setTimeout(function() {
+        if (typeof Shiny !== 'undefined') {
+          Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
+        }
+      }, 800);
+    }
+  }, 200);
+</script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -302,18 +319,6 @@ month_unique &lt;- week_lookup %&gt;%
 ui &lt;- page_navbar(
   title = "Atlas Dashboard",
   theme = bs_theme(version = 5, bootswatch = "flatly"),
-  header = tags$script(HTML("
-    var el = document.getElementById('loading-overlay');
-    if (el) { 
-      el.style.opacity = '0'; 
-      setTimeout(function(){ el.remove(); }, 700); 
-    }
-    setTimeout(function() {
-      if (typeof Shiny !== 'undefined') {
-        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
-      }
-    }, 800);
-  ")),
   
   # === TAB 0: WELCOME ===
   nav_panel(
