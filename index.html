@@ -89,28 +89,13 @@ ul.task-list li input[type="checkbox"] {
 <div class="card-body html-fill-item html-fill-container">
 <div id="loading-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.96); z-index:2147483647; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Segoe UI',system-ui,sans-serif; transition:opacity 0.6s ease;" class="html-fill-item html-fill-container">
   <div style="text-align:center; max-width:480px; padding:2rem;" class="html-fill-item html-fill-container">
-    <img src="welcome_assets/corn_kernel.png" style="width:100px; height:auto; animation:spin 2s linear infinite; margin-bottom:1rem;" alt="Loading...">
+    <div style="font-size:4rem; margin-bottom:1rem; animation:spin 2s linear infinite;" class="html-fill-item html-fill-container">🌽</div>
     <h3 style="color:#2c3e50; margin-bottom:0.5rem;">Loading the Grass Senescence Atlas</h3>
     <p style="color:#555; font-size:0.95rem; line-height:1.5; margin-top:0.5rem;">This application loads a <b>large expression dataset (~45 MB)</b> and an R runtime directly in your browser. Initial loading may take <b>1–2 minutes</b> depending on your connection speed.</p>
     <p style="color:#888; font-size:0.82rem; margin-top:0.25rem;">Please do not close or refresh this tab.</p>
   </div>
   <style>@keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }</style>
 </div>
-<script>
-  var checkShiny = setInterval(function() {
-    if (typeof Shiny !== 'undefined' && Shiny.shinyapp && Shiny.shinyapp.isConnected()) {
-      clearInterval(checkShiny);
-      var el = document.getElementById('loading-overlay');
-      if (el) { 
-        el.style.opacity = '0'; 
-        setTimeout(function(){ el.remove(); }, 700); 
-      }
-      setTimeout(function() {
-        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
-      }, 800);
-    }
-  }, 200);
-</script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -317,6 +302,18 @@ month_unique &lt;- week_lookup %&gt;%
 ui &lt;- page_navbar(
   title = "Atlas Dashboard",
   theme = bs_theme(version = 5, bootswatch = "flatly"),
+  header = tags$script(HTML("
+    var el = document.getElementById('loading-overlay');
+    if (el) { 
+      el.style.opacity = '0'; 
+      setTimeout(function(){ el.remove(); }, 700); 
+    }
+    setTimeout(function() {
+      if (typeof Shiny !== 'undefined') {
+        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
+      }
+    }, 800);
+  ")),
   
   # === TAB 0: WELCOME ===
   nav_panel(
