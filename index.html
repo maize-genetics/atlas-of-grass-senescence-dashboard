@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Grass Senescence Atlas</title>
+<title>Grass Senescence Atlas (Data loads in 1-2 min)</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -72,7 +72,7 @@ ul.task-list li input[type="checkbox"] {
 
 
       <div class="navbar-title">
-        <div class="navbar-title-text"><a href="#">Grass Senescence Atlas</a></div>
+        <div class="navbar-title-text"><a href="#">Grass Senescence Atlas (Data loads in 1-2 min)</a></div>
         
         
       </div>
@@ -291,7 +291,7 @@ month_unique &lt;- week_lookup %&gt;%
 
 # --- 4. UI ---
 ui &lt;- page_navbar(
-  title = HTML("Grass Senescence Atlas &lt;span style='font-size: 0.8rem; font-weight: normal; margin-left: 20px; color: #666;'&gt;(Note: Data loads in 1-2 min)&lt;/span&gt;"),
+  title = "Grass Senescence Atlas",
   theme = bs_theme(version = 5, bootswatch = "flatly"),
   header = tags$script(HTML("
     $(document).on('shiny:connected', function() {
