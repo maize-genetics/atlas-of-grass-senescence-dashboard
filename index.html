@@ -104,11 +104,17 @@ ul.task-list li input[type="checkbox"] {
     }
   }, 500);
 
-  // Method 2: Fallback to any user interaction
-  document.addEventListener('mousedown', function() {
+  // Method 2: Fallback to any user interaction (using capture to catch events before they are stopped)
+  window.addEventListener('mousedown', function() {
     removeBanner();
     clearInterval(checkLoad);
-  }, { once: true });
+  }, { once: true, capture: true });
+
+  // Method 3: Shiny connection event
+  document.addEventListener('shiny:connected', function() {
+    removeBanner();
+    clearInterval(checkLoad);
+  });
 </script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
