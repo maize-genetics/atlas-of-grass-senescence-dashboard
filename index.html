@@ -91,11 +91,13 @@ ul.task-list li input[type="checkbox"] {
   Notice: Data loads in 1-2 min. Please do not close or refresh this page.
 </div>
 <script>
-  // Remove the banner once Shiny is connected
-  $(document).on('shiny:connected', function() {
-    var banner = document.getElementById('loading-disclaimer-banner');
-    if (banner) banner.remove();
-  });
+  var checkLoad = setInterval(function() {
+    if (document.getElementById('methodology-card')) {
+      var banner = document.getElementById('loading-disclaimer-banner');
+      if (banner) banner.remove();
+      clearInterval(checkLoad);
+    }
+  }, 500);
 </script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
@@ -332,6 +334,7 @@ ui &lt;- page_navbar(
         p("Similar to the Leaf Network, but focused on root and stem tissue co-expression modules.")
       ),
       card(
+        id = "methodology-card",
         card_header("Dataset Overview &amp; Methodology"),
         layout_column_wrap(
           width = 1/2,
