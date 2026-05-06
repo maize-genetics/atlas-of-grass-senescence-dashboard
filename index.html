@@ -87,17 +87,28 @@ ul.task-list li input[type="checkbox"] {
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
 <div class="card html-fill-item html-fill-container bslib-card" data-fill="false" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-body html-fill-item html-fill-container">
-<div id="loading-disclaimer-banner" style="position: absolute; top: 12px; right: 80px; z-index: 1050; color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; pointer-events: none;" class="html-fill-item html-fill-container">
-  Notice: Data loads in 1-2 min. Please do not close or refresh this page.
+<div id="loading-disclaimer-banner" style="position: absolute; top: 12px; right: 80px; z-index: 1050; color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; cursor: pointer; pointer-events: auto;" onclick="this.remove()" class="html-fill-item html-fill-container">
+  Notice: Data loads in 1-2 min. Please do not close or refresh this page. ×
 </div>
 <script>
+  function removeBanner() {
+    var banner = document.getElementById('loading-disclaimer-banner');
+    if (banner) banner.remove();
+  }
+
+  // Method 1: Poll for dashboard content
   var checkLoad = setInterval(function() {
     if (document.getElementById('methodology-card')) {
-      var banner = document.getElementById('loading-disclaimer-banner');
-      if (banner) banner.remove();
+      removeBanner();
       clearInterval(checkLoad);
     }
   }, 500);
+
+  // Method 2: Fallback to any user interaction
+  document.addEventListener('mousedown', function() {
+    removeBanner();
+    clearInterval(checkLoad);
+  }, { once: true });
 </script>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
