@@ -274,7 +274,7 @@ ui <- page_navbar(
         p("Interactively access the transcriptomic data featured in the paper:"),
         tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks limit nitrogen recycling in annuals"),
         br(),
-        tags$a("Link to the article", href = "#", target = "_blank"),
+        tags$a("Link to the article", href = "https://www.biorxiv.org/content/10.64898/2026.05.05.723041v1", target = "_blank"),
         hr(),
         h5("How to Use"),
         tags$b("1. Expression Explorer"),
