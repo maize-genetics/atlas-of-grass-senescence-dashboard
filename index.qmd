@@ -1,0 +1,1012 @@
+---
+title: "Grass Senescence Atlas"
+engine: knitr
+format: 
+  dashboard:
+    theme: flatly
+    nav-buttons: [github]
+    embed-resources: false
+filters:
+  - shinylive
+---
+
+# Dashboard
+
+```{=html}
+<div id="loading-disclaimer-banner" style="position: absolute; top: 12px; right: 80px; z-index: 1050; color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; cursor: pointer; pointer-events: auto;" onclick="this.remove()">
+  Notice: Data loads in 1-2 min. Please do not close or refresh this page. &times;
+</div>
+<script>
+  function removeBanner() {
+    var banner = document.getElementById('loading-disclaimer-banner');
+    if (banner) banner.remove();
+  }
+
+  // Method 1: Poll for dashboard content
+  var checkLoad = setInterval(function() {
+    if (document.getElementById('methodology-card')) {
+      removeBanner();
+      clearInterval(checkLoad);
+    }
+  }, 500);
+
+  // Method 2: Fallback to any user interaction (using capture to catch events before they are stopped)
+  window.addEventListener('mousedown', function() {
+    removeBanner();
+    clearInterval(checkLoad);
+  }, { once: true, capture: true });
+
+  // Method 3: Shiny connection event
+  document.addEventListener('shiny:connected', function() {
+    removeBanner();
+    clearInterval(checkLoad);
+  });
+
+  // Method 4: 20-second timer fallback
+  setTimeout(function() {
+    removeBanner();
+    clearInterval(checkLoad);
+  }, 20000);
+</script>
+```
+
+
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 900
+#| resources:
+#|   - vst_full_xz.rds
+#|   - metadata.rds
+#|   - mapping_full_xz.rds
+#|   - 09_TOM_UMAP_embedding_leaf.csv
+#|   - 09_top_edges_leaf.csv
+#|   - leaf_network_maizeminedescription.txt
+#|   - module_plots/module_m1_turquoise.png
+#|   - module_plots/module_m2_blue.png
+#|   - module_plots/module_m3_brown.png
+#|   - module_plots/module_m4_yellow.png
+#|   - module_plots/module_m5_green.png
+#|   - module_plots/module_m6_red.png
+#|   - module_plots/module_m7_black.png
+#|   - module_plots/module_m8_pink.png
+#|   - module_plots/module_m9_magenta.png
+#|   - module_plots/module_m10_purple.png
+#|   - 09_TOM_UMAP_embedding_underground.csv
+#|   - 09_top_edges_underground.csv
+#|   - 08_module_eigengenes_samples_underground.csv
+#|   - und_network_maizeminedescription.txt
+#|   - module_plots_underground/module_um1_turquoise.png
+#|   - module_plots_underground/module_um2_blue.png
+#|   - module_plots_underground/module_um3_brown.png
+#|   - module_plots_underground/module_um4_yellow.png
+#|   - module_plots_underground/module_um5_green.png
+#|   - module_plots_underground/module_um6_red.png
+#|   - module_plots_underground/module_um7_black.png
+#|   - module_plots_underground/module_um9_magenta.png
+#|   - welcome_assets/species_tree.png
+#|   - welcome_assets/umap_atlas.png
+#|   - welcome_assets/methodology_summary.png
+#|   - welcome_assets/gdd_plot.png
+
+library(shiny)
+library(bslib)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(base64enc)
+
+# --- 1. DATA LOADING (Must be at the TOP) ---
+# Base URL for data files — GitHub Pages deployment
+base_url <- "https://maize-genetics.github.io/atlas-of-grass-senescence-dashboard/"
+
+if (!file.exists("vst_full_xz.rds")) download.file(paste0(base_url, "vst_full_xz.rds"), "vst_full_xz.rds")
+if (!file.exists("metadata.rds")) download.file(paste0(base_url, "metadata.rds"), "metadata.rds")
+if (!file.exists("mapping_full_xz.rds")) download.file(paste0(base_url, "mapping_full_xz.rds"), "mapping_full_xz.rds")
+if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_leaf.csv"), "09_TOM_UMAP_embedding_leaf.csv")
+if (!file.exists("09_top_edges_leaf.csv")) download.file(paste0(base_url, "09_top_edges_leaf.csv"), "09_top_edges_leaf.csv")
+if (!file.exists("leaf_network_maizeminedescription.txt")) download.file(paste0(base_url, "leaf_network_maizeminedescription.txt"), "leaf_network_maizeminedescription.txt")
+if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_underground.csv"), "09_TOM_UMAP_embedding_underground.csv")
+if (!file.exists("09_top_edges_underground.csv")) download.file(paste0(base_url, "09_top_edges_underground.csv"), "09_top_edges_underground.csv")
+if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file(paste0(base_url, "08_module_eigengenes_samples_underground.csv"), "08_module_eigengenes_samples_underground.csv")
+if (!file.exists("und_network_maizeminedescription.txt")) download.file(paste0(base_url, "und_network_maizeminedescription.txt"), "und_network_maizeminedescription.txt")
+
+
+vst_counts <- readRDS("vst_full_xz.rds")
+metadata <- readRDS("metadata.rds")
+gene_og_map <- readRDS("mapping_full_xz.rds")
+# Pre-compute default OG at load time to ensure instant startup render
+.default_og <- tryCatch({
+  m <- gene_og_map$Orthogroup[gene_og_map$GeneID == "Zm00001eb319560"]
+  if (length(m) > 0 && !is.na(m[1])) m[1] else "OG0007133"
+}, error = function(e) "OG0007133")
+umap_df <- read.csv("09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
+desc_df <- read.delim("leaf_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+edges_df <- read.csv("09_top_edges_leaf.csv", stringsAsFactors = FALSE)
+
+und_umap_df <- read.csv("09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
+und_desc_df <- read.delim("und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+und_edges_df <- read.csv("09_top_edges_underground.csv", stringsAsFactors = FALSE)
+
+dir.create("welcome_assets", showWarnings = FALSE)
+if (!file.exists("welcome_assets/species_tree.png")) {
+  tryCatch(download.file(paste0(base_url, "welcome_assets/species_tree.png"), "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/umap_atlas.png")) {
+  tryCatch(download.file(paste0(base_url, "welcome_assets/umap_atlas.png"), "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/methodology_summary.png")) {
+  tryCatch(download.file(paste0(base_url, "welcome_assets/methodology_summary.png"), "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
+}
+if (!file.exists("welcome_assets/gdd_plot.png")) {
+  tryCatch(download.file(paste0(base_url, "welcome_assets/gdd_plot.png"), "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
+}
+
+welcome_b64 <- list(
+  species_tree = if(file.exists("welcome_assets/species_tree.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/species_tree.png")) else "",
+  umap_atlas = if(file.exists("welcome_assets/umap_atlas.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/umap_atlas.png")) else "",
+  methodology_summary = if(file.exists("welcome_assets/methodology_summary.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/methodology_summary.png")) else "",
+  gdd_plot = if(file.exists("welcome_assets/gdd_plot.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/gdd_plot.png")) else ""
+)
+
+# Pre-load all module PNGs as base64 data URIs at startup so they render instantly
+dir.create("module_plots", showWarnings = FALSE)
+module_names <- c("m1_turquoise", "m2_blue", "m3_brown", "m4_yellow", "m5_green",
+                  "m6_red", "m7_black", "m8_pink", "m9_magenta", "m10_purple")
+module_plots_b64 <- setNames(lapply(module_names, function(mod) {
+  local_path <- paste0("module_plots/module_", mod, ".png")
+  if (!file.exists(local_path)) {
+    tryCatch(
+      download.file(paste0(base_url, "module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
+      error = function(e) NULL
+    )
+  }
+  if (file.exists(local_path)) {
+    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
+  } else NA_character_
+}), module_names)
+
+dir.create("module_plots_underground", showWarnings = FALSE)
+und_module_names <- c("um1_turquoise", "um2_blue", "um3_brown", "um4_yellow", "um5_green",
+                      "um6_red", "um7_black", "um8_pink", "um9_magenta")
+und_module_plots_b64 <- setNames(lapply(und_module_names, function(mod) {
+  local_path <- paste0("module_plots_underground/module_", mod, ".png")
+  if (!file.exists(local_path)) {
+    tryCatch(
+      download.file(paste0(base_url, "module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
+      error = function(e) NULL
+    )
+  }
+  if (file.exists(local_path)) {
+    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
+  } else NA_character_
+}), und_module_names)
+
+# Add Zea mays Gene IDs to the UMAP data for hover text using the description file
+zm_map <- desc_df %>% 
+  group_by(OG) %>%
+  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+
+umap_df <- umap_df %>%
+  left_join(zm_map, by = c("gene" = "OG")) %>%
+  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+
+# Pre-join UMAP coordinates onto edges so we don't recalculate in every reactive update
+umap_coords <- umap_df %>% select(gene, UMAP1, UMAP2)
+edges_df <- edges_df %>%
+  left_join(umap_coords, by = c("from" = "gene")) %>%
+  rename(x0 = UMAP1, y0 = UMAP2) %>%
+  left_join(umap_coords, by = c("to" = "gene")) %>%
+  rename(x1 = UMAP1, y1 = UMAP2) %>%
+  filter(!is.na(x0), !is.na(x1))
+
+# --- Pre-processing Underground ---
+und_zm_map <- und_desc_df %>% 
+  group_by(OG) %>%
+  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+
+und_umap_df <- und_umap_df %>%
+  left_join(und_zm_map, by = c("gene" = "OG")) %>%
+  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+
+und_umap_coords <- und_umap_df %>% select(gene, UMAP1, UMAP2)
+und_edges_df <- und_edges_df %>%
+  left_join(und_umap_coords, by = c("from" = "gene")) %>%
+  rename(x0 = UMAP1, y0 = UMAP2) %>%
+  left_join(und_umap_coords, by = c("to" = "gene")) %>%
+  rename(x1 = UMAP1, y1 = UMAP2) %>%
+  filter(!is.na(x0), !is.na(x1))
+
+
+# --- 2. PALETTES ---
+species_palette <- c(
+  "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Bothriochloa_laguroides"="#2CA02C",
+  "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD", "Miscanthus_giganteus"="#8C564B",
+  "Panicum_virgatum"="#98DF8A", "Schizachyrium_scoparium"="#E377C2", "Sorghastrum_nutans"="#7F7F7F",
+  "Sorghum_bicolor"="#FF9896", "Themeda_triandra"="#E6AB02", "Tripsacum_dactyloides"="#17BECF",
+  "Zea_diploperennis"="#BCBD22", "Zea_mays"="#36eb11"
+)
+accession_palette_named <- c(
+  "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Ag_Niagara"="#A6CEE3",
+  "Bothriochloa_laguroides"="#2CA02C", "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD",
+  "Miscanthus_giganteus"="#8C564B", "Panicum_virgatum_A1"="#98DF8A", "Panicum_virgatum_Kanlow"="#2CA02C",
+  "Pv_Liberty"="#f69400", "Schizachyrium_scoparium"="#E377C2", "Sorghastrum_nutans"="#7F7F7F",
+  "Sn_WI"="#993404", "Sorghum_bicolor"="#FF9896", "Sb_BTx623"="#67000D", "Ss_Ahring"="#B3DE69",
+  "Td_floridanum"="#B2DF8A", "Td_IL"="#66C2A5", "Td_KS_B6"="#1F78B4", "Td_KS_C9"="#6A3D9A",
+  "Td_McKain"="#A6CEE3", "Td_MO"="#B2E2E2", "Td_OK"="#63A3CB", "Td_Pete"="#0ad2e4",
+  "Td_TX"="#084081", "Td_Iuka"="#0f93e4", "Td_Texas_Sue"="#0cc688", "Themeda_triandra"="#E6AB02",
+  "Zea_diploperennis"="#BCBD22", "Zd_momo"="#006D2C", "Zm_lh244"="#36eb11", "Zm_lh287Xlh244"="#77e204"
+)
+tissue_type_palette <- c("leaf" = "#30e004", "root" = "#ee6766", "stem" = "#07cde3")
+life_history_palette <- c("annual" = "#B1ECB8", "perennial" = "#D3E4F5")
+
+# --- 3. HELPER LOGIC ---
+week_lookup <- data.frame(
+  week = 1:14,
+  julian = c(208, 215, 222, 229, 235, 242, 248, 256, 263, 270, 277, 284, 290, 298),
+  month = c("July", "Aug", "Aug", "Aug", "Aug", "Sept", "Sept", "Sept", "Sept", "Oct", "Oct", "Oct", "Oct", "Oct")
+)
+month_unique <- week_lookup %>%
+  group_by(month) %>%
+  summarise(start = min(week), end = max(week), mid = mean(c(min(week), max(week))))
+
+# --- 4. UI ---
+ui <- page_navbar(
+  title = "Grass Senescence Atlas",
+  theme = bs_theme(version = 5, bootswatch = "flatly"),
+  header = tags$script(HTML("
+    $(document).on('shiny:connected', function() {
+      setTimeout(function() {
+        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
+      }, 500);
+    });
+  ")),
+  
+  # === TAB 0: WELCOME ===
+  nav_panel(
+    title = "The Grass Senescence Atlas",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "About This Dashboard",
+
+        p("Interactively access the transcriptomic data featured in the paper:"),
+        tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks limit nitrogen recycling in annuals"),
+        br(),
+        tags$a("Link to the article", href = "#", target = "_blank"),
+        hr(),
+        h5("How to Use"),
+        tags$b("1. Expression Explorer"),
+        p("Filter and visualize gene expression profiles across different species, tissues, and timepoints. Search using Zea mays B73 v5 annotation IDs or Orthogroup IDs."),
+        tags$b("2. Leaf Network"),
+        p("Interactive WGCNA TOM-UMAP embedding of the leaf co-expression network. Search for genes, view their top connections (highlighted in red), and examine module eigengene patterns."),
+        tags$b("3. Underground Network"),
+        p("Similar to the Leaf Network, but focused on root and stem tissue co-expression modules.")
+      ),
+      card(
+        id = "methodology-card",
+        card_header("Dataset Overview & Methodology"),
+        layout_column_wrap(
+          width = 1/2,
+          card(
+            card_header("The Grass Senescence Atlas"),
+            p("This dataset encompasses:"),
+            tags$ul(
+              tags$li(tags$b("14 grass species"), " (", tags$b("31 accessions"), ")"),
+              tags$li(tags$b("2 seasons:"), " pot-in-pot field and standard field"),
+              tags$li(tags$b("3 tissues:"), " leaves, roots, stems"),
+              tags$li(tags$b("Life history:"), " perennial and annual")
+            ),
+            tags$img(src = welcome_b64[["species_tree"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            hr(),
+            h6("Expression UMAP"),
+            tags$img(src = welcome_b64[["umap_atlas"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+          ),
+          card(
+            card_header("Methodology"),
+            tags$img(src = welcome_b64[["methodology_summary"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            hr(),
+            h6("Environmental Conditions"),
+            p("Daily Growing Degree Days (GDDs; °C) plotted against Julian days for the 2023 and 2024 seasons. Yellow triangles indicate specific sampling events. The variation in GDDs reflects the range of heat units experienced by the field-grown plants, capturing the environmental progression from mid-summer through late-season senescence."),
+            tags$img(src = welcome_b64[["gdd_plot"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+          )
+        )
+      )
+    )
+  ),
+  
+  # === TAB 1: EXPRESSION EXPLORER ===
+  nav_panel(
+    title = "Expression Explorer",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Filters & Settings",
+        textInput("gene_id", "Gene or Orthogroup ID:", value = "Zm00001eb319560"),
+        uiOutput("og_id_display"),
+        actionButton("gen_plot", "Generate Time-Course Plot", 
+                     class = "btn-primary w-100", style = "margin-top:6px; margin-bottom:4px;"),
+        hr(),
+        selectInput("group_var", "Grouping Variable:", 
+                    choices = c("accession", "species", "tissue", "life_history"),
+                    selected = "species"),
+        hr(),
+        h6("Subsetting:"),
+        selectizeInput("filter_tissue", "Tissue (optional):", 
+                       choices = unique(metadata$tissue), selected = "leaf", multiple = TRUE),
+        selectizeInput("filter_species", "Species (optional):", 
+                       choices = unique(metadata$species), 
+                       selected = c("Andropogon_gerardii", "Zea_mays", "Tripsacum_dactyloides", 
+                                    "Sorghum_bicolor", "Sorghastrum_nutans", "Zea_diploperennis"),
+                       multiple = TRUE),
+        selectizeInput("filter_accession", "Accession (optional):", choices = NULL, multiple = TRUE),
+        hr(),
+        span("Note: Using professional native Plotly ribbons.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("Expression Boxplot"),
+          plotlyOutput("box_plot", height = "500px")
+        ),
+        card(
+          card_header("Time-Course (Mean ± SE)"),
+          plotlyOutput("ribbon_plot", height = "500px"),
+          card_footer("Shaded ribbon: Mean ± SE. X-axis: Week | Julian Day.")
+        )
+      )
+    )
+  ),
+  
+  # === TAB 2: LEAF NETWORK EXPLORER ===
+  nav_panel(
+    title = "Leaf Network",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Network Controls",
+        textInput("net_query", "Search Gene (OG / Zea mays):", value = ""),
+        htmlOutput("net_status_msg"),
+        hr(),
+        selectInput("net_module", "Highlight Module:", 
+                    choices = c("All Modules", sort(unique(umap_df$module_label))),
+                    selected = "All Modules"),
+        hr(),
+        p("Interactive WGCNA TOM-UMAP."),
+        p("Hover over any node to see its properties."),
+        hr(),
+        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM > 0.05) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("WGCNA Leaf Module Embedding"),
+          plotlyOutput("network_plot", height = "600px")
+        ),
+        card(
+          card_header("Module Details & Interacting Genes"),
+          div(
+            style = "max-height: 600px; overflow-y: auto;",
+            uiOutput("module_plot_ui"),
+            h6("Selected Node Properties:"),
+            tableOutput("node_table"),
+            hr(),
+            h6("Top Interactions:"),
+            tableOutput("interactions_table")
+          )
+        )
+      )
+    )
+  ),
+  
+  # === TAB 3: UNDERGROUND NETWORK EXPLORER ===
+  nav_panel(
+    title = "Underground Network",
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Network Controls",
+        textInput("und_net_query", "Search Gene (OG / Zea mays):", value = ""),
+        htmlOutput("und_net_status_msg"),
+        hr(),
+        selectInput("und_net_module", "Highlight Module:", 
+                    choices = c("All Modules", sort(unique(und_umap_df$module_label))),
+                    selected = "All Modules"),
+        hr(),
+        p("Interactive WGCNA TOM-UMAP."),
+        p("Hover over any node to see its properties."),
+        hr(),
+        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM > 0.1) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
+      ),
+      layout_column_wrap(
+        width = 1/2,
+        card(
+          card_header("WGCNA Underground Module Embedding"),
+          plotlyOutput("und_network_plot", height = "600px")
+        ),
+        card(
+          card_header("Module Details & Interacting Genes"),
+          div(
+            style = "max-height: 600px; overflow-y: auto;",
+            uiOutput("und_module_plot_ui"),
+            h6("Selected Node Properties:"),
+            tableOutput("und_node_table"),
+            hr(),
+            h6("Top Interactions:"),
+            tableOutput("und_interactions_table")
+          )
+        )
+      )
+    )
+  )
+)
+
+# --- 5. SERVER ---
+server <- function(input, output, session) {
+  
+  # --- Expression Explorer Server Logic ---
+  observeEvent(input$filter_species, {
+    available_accs <- metadata %>% 
+      filter(species %in% input$filter_species | length(input$filter_species) == 0) %>% 
+      pull(accession) %>% unique() %>% sort()
+    
+    defaults <- c()
+    if (length(input$filter_species) > 0) {
+      for (s in input$filter_species) {
+        accs_for_s <- metadata %>% filter(species == s) %>% pull(accession) %>% unique()
+        if (length(accs_for_s) == 1) defaults <- c(defaults, accs_for_s)
+        else if (s == "Tripsacum_dactyloides") defaults <- c(defaults, "Td_Pete")
+        else if (s == "Zea_mays") { if ("Zm_lh287Xlh244" %in% accs_for_s) defaults <- c(defaults, "Zm_lh287Xlh244") }
+        else defaults <- c(defaults, accs_for_s)
+      }
+    }
+    updateSelectizeInput(session, "filter_accession", choices = available_accs, selected = defaults, server = TRUE)
+  }, ignoreNULL = FALSE)
+
+  target_og <- reactive({
+    query_id <- str_trim(input$gene_id)
+    if (query_id == "") return(NULL)
+    if (str_starts(query_id, "OG")) {
+      if (query_id %in% rownames(vst_counts)) return(query_id)
+    } else {
+      match_row <- gene_og_map %>% filter(GeneID == query_id)
+      if (nrow(match_row) > 0) return(match_row$Orthogroup[1])
+    }
+    return(NULL)
+  })
+  
+  output$og_id_display <- renderUI({
+    og <- target_og()
+    query <- str_trim(input$gene_id)
+    if (is.null(og)) {
+      span("ID not found or not in atlas", style = "color: #e44; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    } else if (str_starts(query, "OG")) {
+      span(paste0(og, " \u2713"), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    } else {
+      span(paste("Mapped Orthogroup:", og), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+    }
+  })
+
+  # gene_data: triggered by button click OR runs once at startup (ignoreNULL = FALSE)
+  gene_data <- eventReactive(input$gen_plot, {
+    query_id <- str_trim(input$gene_id)
+    # Fast lookup: if OG ID, use directly; otherwise use gene_og_map
+    tog <- if (str_starts(query_id, "OG") && query_id %in% rownames(vst_counts)) {
+      query_id
+    } else if (query_id == "Zm00001eb319560" || query_id == "") {
+      .default_og  # use pre-computed value, avoids slow lookup at startup
+    } else {
+      m <- gene_og_map$Orthogroup[gene_og_map$GeneID == query_id]
+      if (length(m) > 0) m[1] else NULL
+    }
+    req(tog)
+    
+    expr_vals <- vst_counts[tog, ]
+    df <- data.frame(sample_id = names(expr_vals), expression = as.numeric(expr_vals)) %>%
+      inner_join(metadata, by = "sample_id")
+    
+    if (length(input$filter_tissue) > 0) df <- df %>% filter(tissue %in% input$filter_tissue)
+    if (length(input$filter_species) > 0) df <- df %>% filter(species %in% input$filter_species)
+    if (length(input$filter_accession) > 0) df <- df %>% filter(accession %in% input$filter_accession)
+    df
+  }, ignoreNULL = FALSE)
+
+  y_range <- reactive({
+    df <- gene_data(); req(nrow(df) > 0)
+    range(df$expression, na.rm = TRUE)
+  })
+
+  active_palette <- reactive({
+    gv <- input$group_var
+    if (gv == "life_history") life_history_palette
+    else if (gv == "tissue") tissue_type_palette
+    else if (gv == "species") species_palette
+    else if (gv == "accession") accession_palette_named
+    else c(accession_palette_named, species_palette, tissue_type_palette, life_history_palette)
+  })
+
+  output$ribbon_plot <- renderPlotly({
+    df <- gene_data(); req(nrow(df) > 0)
+    
+    summary_df <- df %>%
+      distinct(sample_id, .keep_all = TRUE) %>%
+      group_by(week, group = as.character(.data[[input$group_var]])) %>%
+      summarise(mean_expr = mean(expression, na.rm = TRUE), se_expr = sd(expression, na.rm = TRUE) / sqrt(n()), .groups = "drop") %>%
+      left_join(week_lookup, by = "week") %>%
+      arrange(group, week) %>% filter(!is.na(mean_expr))
+    
+    yr <- y_range(); y_min <- yr[1]; y_max <- yr[2]; buffer <- (y_max - y_min) * 0.1
+    y_lim_top <- y_max + buffer; tile_height <- (y_max - y_min) * 0.15; y_plot_top <- y_lim_top + tile_height
+    
+    p <- plot_ly()
+    groups <- unique(summary_df$group)
+    for (g in groups) {
+      g_data <- summary_df %>% filter(group == g)
+      color_hex <- if (g %in% names(active_palette())) active_palette()[g] else "#333333"
+      
+      p <- p %>% add_polygons(
+        x = c(g_data$week, rev(g_data$week)), y = c(g_data$mean_expr + g_data$se_expr, rev(g_data$mean_expr - g_data$se_expr)),
+        fillcolor = color_hex, opacity = 0.2, line = list(color = "transparent"), name = g, showlegend = FALSE, connectgaps = TRUE
+      ) %>% add_trace(
+        x = g_data$week, y = g_data$mean_expr, type = "scatter", mode = "lines+markers",
+        line = list(color = color_hex, width = 3), marker = list(color = color_hex, size = 8), name = g,
+        hovertext = paste0("Group: ", g, "<br>Week: ", g_data$week, "<br>Mean VST: ", round(g_data$mean_expr, 2)),
+        hoverinfo = "text", connectgaps = TRUE
+      )
+    }
+    
+    shapes <- list(); annotations <- list(); month_colors <- c("July"="#228B22", "Aug"="#7CFC00", "Sept"="#ADFF2F", "Oct"="#FFFF00")
+    for(i in 1:nrow(month_unique)) {
+      m <- month_unique[i,]
+      shapes[[i]] <- list(type = "rect", fillcolor = month_colors[m$month], line = list(color = "black", width = 1),
+                          opacity = 0.4, x0 = m$start - 0.5, x1 = m$end + 0.5, y0 = y_lim_top, y1 = y_plot_top, xref = "x", yref = "y")
+      annotations[[i]] <- list(x = m$mid, y = y_lim_top + (tile_height / 2), text = m$month, showarrow = FALSE, font = list(size = 12, color = "black", weight = "bold"))
+    }
+    
+    p %>% layout(
+      xaxis = list(title = "Week | Julian Day", tickvals = 1:14, ticktext = paste0("w", week_lookup$week, "|", week_lookup$julian), tickangle = 45),
+      yaxis = list(title = "expression (normalized VST-counts)", range = c(y_min - buffer, y_plot_top)),
+      shapes = shapes, annotations = annotations, showlegend = FALSE,
+      margin = list(t = 50)
+    )
+  })
+
+  output$box_plot <- renderPlotly({
+    df <- gene_data(); req(nrow(df) > 0)
+    yr <- y_range(); y_min <- yr[1]; y_max <- yr[2]; buffer <- (y_max - y_min) * 0.1
+    p <- ggplot(df, aes(x = .data[[input$group_var]], y = expression, fill = .data[[input$group_var]])) +
+      geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+      geom_jitter(aes(text = paste("Sample:", sample_id, "<br>VST:", round(expression, 2))), width = 0.2, alpha = 0.3, size = 1) +
+      scale_fill_manual(values = active_palette()) +
+      coord_cartesian(ylim = c(y_min - buffer, y_max + (buffer * 2.5))) +
+      theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
+      labs(y = "expression (normalized VST-counts)", x = NULL)
+    ggplotly(p, tooltip = "text")
+  })
+  
+  # Force plots to render even when Expression Explorer tab is not active
+  outputOptions(output, "ribbon_plot", suspendWhenHidden = FALSE)
+  outputOptions(output, "box_plot",    suspendWhenHidden = FALSE)
+  
+  # --- Network Explorer Server Logic ---
+  net_target_og_raw <- reactive({
+    query_id <- str_trim(input$net_query)
+    if (query_id == "") return(NULL)
+    if (str_starts(query_id, "OG")) {
+      return(query_id)
+    } else {
+      match_row <- gene_og_map %>% filter(GeneID == query_id)
+      if (nrow(match_row) > 0) return(match_row$Orthogroup[1])
+    }
+    return(query_id) 
+  })
+  
+  net_target_og <- net_target_og_raw %>% debounce(500)
+
+  output$net_status_msg <- renderUI({
+    query_id <- str_trim(input$net_query)
+    if (query_id == "") return(NULL)
+    tog <- net_target_og()
+    if (is.null(tog)) return(NULL)
+    
+    if (!(tog %in% umap_df$gene)) {
+      return(tags$div("Not found in network", style = "color: red; font-weight: bold; margin-top: 10px;"))
+    } else {
+      return(tags$div("Orthogroup highlighted!", style = "color: green; font-weight: bold; margin-top: 10px;"))
+    }
+  })
+
+  # Clear search box whenever user clicks a node directly
+  observeEvent(event_data("plotly_click", source = "network_view"), {
+    updateTextInput(session, "net_query", value = "")
+  })
+
+  output$network_plot <- renderPlotly({
+    req(nrow(umap_df) > 0)
+    plot_data <- umap_df
+    edge_data <- edges_df
+    tog   <- net_target_og()           # from search box
+    click <- event_data("plotly_click", source = "network_view")
+    clicked_gene <- if (!is.null(click)) click$key else NULL
+    
+    # Active highlight: search query takes priority, then click
+    active_gene <- if (!is.null(tog) && str_trim(input$net_query) != "") tog else clicked_gene
+    
+    is_query_active <- !is.null(active_gene)
+    is_query_found  <- is_query_active && (active_gene %in% plot_data$gene)
+    
+    # --- Compute node display properties ---
+    if (is_query_active && !is_query_found) {
+      plot_data <- plot_data %>%
+        mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
+    } else if (is_query_found) {
+      plot_data <- plot_data %>%
+        mutate(
+          display_color = ifelse(gene == active_gene, color, "lightgrey"),
+          display_opacity = ifelse(gene == active_gene, 1, 0.15),
+          display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))
+        ) %>%
+        arrange(gene == active_gene)
+    } else if (input$net_module != "All Modules") {
+      plot_data <- plot_data %>%
+        mutate(
+          display_color = ifelse(module_label == input$net_module, color, "lightgrey"),
+          display_opacity = ifelse(module_label == input$net_module, 0.9, 0.15),
+          display_size = pmax(kME * 15, 3)
+        )
+    } else {
+      plot_data <- plot_data %>%
+        mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+    }
+    
+    # --- Compute edge display properties ---
+    if (is_query_active && !is_query_found) {
+      edge_data <- edge_data %>%
+        mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
+    } else if (is_query_found) {
+      is_connected <- edge_data$from == active_gene | edge_data$to == active_gene
+      edge_data <- edge_data %>%
+        mutate(
+          edge_color   = ifelse(is_connected, "red", "lightgrey"),
+          edge_opacity = ifelse(is_connected, 0.8, 0.02),
+          edge_width   = ifelse(is_connected, 2, 0.5)
+        ) %>%
+        arrange(is_connected)
+    } else {
+      edge_data <- edge_data %>%
+        mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    }
+    
+    p <- plot_ly(source = "network_view")
+    
+    # --- Draw edges first (so nodes appear on top) ---
+    # Split into highlighted vs background to allow separate opacity control
+    bg_edges <- edge_data %>% filter(edge_opacity < 0.5)
+    hi_edges <- edge_data %>% filter(edge_opacity >= 0.5)
+    
+    if (nrow(bg_edges) > 0) {
+      p <- p %>% add_segments(
+        data = bg_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "lightgrey", width = 0.5),
+        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    if (nrow(hi_edges) > 0) {
+      p <- p %>% add_segments(
+        data = hi_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "red", width = 2),
+        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    
+    # --- Draw nodes on top of edges ---
+    p <- p %>% add_trace(
+      data = plot_data,
+      x = ~UMAP1, y = ~UMAP2,
+      type = "scatter", mode = "markers",
+      marker = list(
+        color = ~display_color,
+        size = ~display_size,
+        opacity = ~display_opacity,
+        line = list(color = "white", width = 0.5)
+      ),
+      text = ~paste0("OG: ", gene, "<br>Zea mays: ", Zea_mays_genes, "<br>Module: ", module_label, "<br>kME: ", round(kME, 3)),
+      hoverinfo = "text",
+      key = ~gene,
+      showlegend = FALSE
+    )
+    
+    p %>% layout(
+      xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+      yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+      hovermode = "closest"
+    )
+  })
+  
+  output$node_table <- renderTable({
+    click_data <- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene <- click_data$key
+    
+    node_info <- umap_df %>%
+      filter(gene == clicked_gene) %>%
+      select(
+        Orthogroup = gene,
+        `Zea mays Gene` = Zea_mays_genes,
+        Module = module_label,
+        kME = kME
+      ) %>%
+      separate_rows(`Zea mays Gene`, sep = ", ")
+      
+    # Extract desc columns by index: 1=gene_id, 5=sink_source, 6=hub_ranking_kME, 7=description
+    desc_subset <- data.frame(
+      gene_id_Zm    = desc_df[[1]],
+      sink_source   = as.character(desc_df[[5]]),
+      hub_score     = as.numeric(desc_df[[6]]),
+      Description   = as.character(desc_df[[7]]),
+      stringsAsFactors = FALSE
+    )
+    
+    node_info <- node_info %>%
+      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %>%
+      mutate(
+        Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
+        sink_source   = ifelse(is.na(sink_source), "—", sink_source),
+        `kME (Hub Score)` = round(kME, 3),
+        `Zea mays Gene` = ifelse(
+          `Zea mays Gene` != "None" & `Zea mays Gene` != "",
+          paste0('<a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank">', `Zea mays Gene`, '</a>'),
+          "None"
+        )
+      ) %>%
+      select(
+        Orthogroup,
+        `Zea mays Gene`,
+        Module,
+        `Sink/Source` = sink_source,
+        `kME (Hub Score)`,
+        Description
+      )
+    
+    return(node_info)
+  }, sanitize.text.function = function(x) x)
+
+  output$module_plot_ui <- renderUI({
+    click_data <- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene <- click_data$key
+    mod <- umap_df %>% filter(gene == clicked_gene) %>% pull(module_label)
+    if (length(mod) == 0) return(NULL)
+    mod <- mod[1]
+    
+    b64_src <- module_plots_b64[[mod]]
+    if (is.null(b64_src) || is.na(b64_src)) {
+      return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
+    }
+    
+    tagList(
+      h6(paste0("Module Eigengene Pattern: ", mod)),
+      tags$img(
+        src   = b64_src,
+        style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"
+      ),
+      hr()
+    )
+  })
+
+  output$interactions_table <- renderTable({
+    click_data <- event_data("plotly_click", source = "network_view")
+    if (is.null(click_data)) return(NULL)
+    
+    clicked_gene <- click_data$key
+    
+    # Find all edges involving this gene
+    connected <- edges_df %>%
+      filter(from == clicked_gene | to == clicked_gene) %>%
+      mutate(partner = ifelse(from == clicked_gene, to, from)) %>%
+      select(partner, weight) %>%
+      arrange(desc(weight))
+    
+    if (nrow(connected) == 0) return(NULL)
+    
+    # Build a simple lookup using column positions to avoid complex name issues
+    desc_lookup <- data.frame(
+      OG          = desc_df[[2]],
+      zm_gene     = desc_df[[1]],
+      description = as.character(desc_df[[7]]),
+      stringsAsFactors = FALSE
+    ) %>%
+      group_by(OG) %>%
+      summarise(
+        `Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
+        Description     = {
+          descs <- unique(description[description != "" & !is.na(description)])
+          if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
+        },
+        .groups = "drop"
+      )
+    
+    connected %>%
+      left_join(desc_lookup, by = c("partner" = "OG")) %>%
+      mutate(
+        Description     = ifelse(is.na(Description), "No description available", Description),
+        `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
+        weight          = round(weight, 4)
+      ) %>%
+      rename(
+        `Partner OG` = partner,
+        `TOM Weight` = weight
+      )
+  })
+
+  # === UNDERGROUND NETWORK LOGIC ===
+  und_net_target_og <- reactive({
+    query <- str_trim(input$und_net_query)
+    if (query == "") return(NULL)
+    if (query %in% und_umap_df$gene) return(query)
+    match_og <- und_umap_df %>% filter(str_detect(Zea_mays_genes, query)) %>% pull(gene)
+    if (length(match_og) > 0) return(match_og[1])
+    return(NULL)
+  })
+
+  output$und_net_status_msg <- renderUI({
+    tog <- und_net_target_og()
+    if (str_trim(input$und_net_query) == "") return(NULL)
+    if (is.null(tog)) {
+      span("Gene not found in network.", style = "color: #d9534f; font-size: 0.9em; font-weight: bold;")
+    } else {
+      span(paste("Highlighted:", tog), style = "color: #5cb85c; font-size: 0.9em; font-weight: bold;")
+    }
+  })
+
+  observeEvent(event_data("plotly_click", source = "und_network_view"), {
+    updateTextInput(session, "und_net_query", value = "")
+  })
+
+  output$und_network_plot <- renderPlotly({
+    req(nrow(und_umap_df) > 0)
+    plot_data <- und_umap_df
+    edge_data <- und_edges_df
+    tog   <- und_net_target_og()
+    click <- event_data("plotly_click", source = "und_network_view")
+    clicked_gene <- if (!is.null(click)) click$key else NULL
+    active_gene <- if (!is.null(tog) && str_trim(input$und_net_query) != "") tog else clicked_gene
+    is_query_active <- !is.null(active_gene)
+    is_query_found  <- is_query_active && (active_gene %in% plot_data$gene)
+
+    if (is_query_active && !is_query_found) {
+      plot_data <- plot_data %>% mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
+      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
+    } else if (is_query_found) {
+      plot_data <- plot_data %>%
+        mutate(display_color = ifelse(gene == active_gene, color, "lightgrey"),
+               display_opacity = ifelse(gene == active_gene, 1, 0.15),
+               display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))) %>%
+        arrange(gene == active_gene)
+      is_connected <- edge_data$from == active_gene | edge_data$to == active_gene
+      edge_data <- edge_data %>%
+        mutate(edge_color = ifelse(is_connected, "red", "lightgrey"),
+               edge_opacity = ifelse(is_connected, 0.8, 0.02),
+               edge_width = ifelse(is_connected, 2, 0.5)) %>%
+        arrange(is_connected)
+    } else if (input$und_net_module != "All Modules") {
+      plot_data <- plot_data %>%
+        mutate(display_color = ifelse(module_label == input$und_net_module, color, "lightgrey"),
+               display_opacity = ifelse(module_label == input$und_net_module, 0.9, 0.15),
+               display_size = pmax(kME * 15, 3))
+      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    } else {
+      plot_data <- plot_data %>% mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
+    }
+
+    p <- plot_ly(source = "und_network_view")
+    
+    # --- Split into highlighted vs background to allow separate opacity control ---
+    bg_edges <- edge_data %>% filter(edge_opacity < 0.5)
+    hi_edges <- edge_data %>% filter(edge_opacity >= 0.5)
+    
+    if (nrow(bg_edges) > 0) {
+      p <- p %>% add_segments(
+        data = bg_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "lightgrey", width = 0.5),
+        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+    if (nrow(hi_edges) > 0) {
+      p <- p %>% add_segments(
+        data = hi_edges,
+        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+        line = list(color = "red", width = 2),
+        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
+      )
+    }
+
+    p <- p %>% add_trace(data = plot_data, x = ~UMAP1, y = ~UMAP2, type = "scatter", mode = "markers",
+                key = ~gene, marker = list(size = ~display_size, color = ~display_color,
+                                           opacity = ~display_opacity, line = list(width = 0.5, color = "white")),
+                text = ~paste0("<b>OG:</b> ", gene, "<br><b>ZmID:</b> ", Zea_mays_genes,
+                               "<br><b>Module:</b> ", module_label, "<br><b>kME:</b> ", round(kME, 3)),
+                hoverinfo = "text") %>%
+      layout(xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             hovermode = "closest")
+    p
+  })
+
+  output$und_node_table <- renderTable({
+    click_data <- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene <- click_data$key
+    node_info <- und_umap_df %>%
+      filter(gene == clicked_gene) %>%
+      select(Orthogroup = gene, `Zea mays Gene` = Zea_mays_genes, Module = module_label, kME = kME) %>%
+      separate_rows(`Zea mays Gene`, sep = ", ")
+    
+    # und_desc_df mapping: 1=gene_id, 2=OG, 5=hub_score, 6=description
+    desc_subset <- data.frame(
+      gene_id_Zm    = und_desc_df[[1]],
+      hub_score     = as.numeric(und_desc_df[[5]]),
+      Description   = as.character(und_desc_df[[6]]),
+      stringsAsFactors = FALSE
+    )
+    
+    node_info <- node_info %>%
+      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %>%
+      mutate(Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
+             `kME (Hub Score)` = round(kME, 3),
+             `Zea mays Gene` = ifelse(`Zea mays Gene` != "None" & `Zea mays Gene` != "",
+                                      paste0('<a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank">', `Zea mays Gene`, '</a>'), "None")) %>%
+      select(Orthogroup, `Zea mays Gene`, Module, `kME (Hub Score)`, Description)
+    return(node_info)
+  }, sanitize.text.function = function(x) x)
+
+  output$und_module_plot_ui <- renderUI({
+    click_data <- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene <- click_data$key
+    mod <- und_umap_df %>% filter(gene == clicked_gene) %>% pull(module_label)
+    if (length(mod) == 0) return(NULL)
+    mod <- mod[1]
+    b64_src <- und_module_plots_b64[[mod]]
+    if (is.null(b64_src) || is.na(b64_src)) return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
+    tagList(
+      h6(paste0("Module Eigengene Pattern: ", mod)),
+      tags$img(src = b64_src, style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"),
+      hr()
+    )
+  })
+
+  output$und_interactions_table <- renderTable({
+    click_data <- event_data("plotly_click", source = "und_network_view")
+    if (is.null(click_data)) return(NULL)
+    clicked_gene <- click_data$key
+    connected <- und_edges_df %>%
+      filter(from == clicked_gene | to == clicked_gene) %>%
+      mutate(partner = ifelse(from == clicked_gene, to, from)) %>%
+      select(partner, weight) %>%
+      arrange(desc(weight))
+    if (nrow(connected) == 0) return(NULL)
+    
+    desc_lookup <- data.frame(OG = und_desc_df[[2]], zm_gene = und_desc_df[[1]], description = as.character(und_desc_df[[6]]), stringsAsFactors = FALSE) %>%
+      group_by(OG) %>%
+      summarise(`Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
+                Description = {
+                  descs <- unique(description[description != "" & !is.na(description)])
+                  if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
+                }, .groups = "drop")
+    
+    connected %>%
+      left_join(desc_lookup, by = c("partner" = "OG")) %>%
+      mutate(Description = ifelse(is.na(Description), "No description available", Description),
+             `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
+             weight = round(weight, 4)) %>%
+      rename(`Partner OG` = partner, `TOM Weight` = weight)
+  })
+}
+
+shinyApp(ui, server)
+```
