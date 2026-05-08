@@ -1,2 +1,13 @@
 .DS_Store
 *.Rproj.user
+
+# Quarto / Shinylive build outputs (regenerate with `quarto render`)
+/.quarto/
+index.html
+index_files/
+
+# Pre-rendered Slim inputs for an alternate dashboard_data pipeline
+/dashboard_data/
+
+# Stray copied service worker sometimes dropped at repo root during preview
+/shinylive-sw.js
