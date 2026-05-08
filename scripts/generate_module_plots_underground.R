@@ -6,41 +6,40 @@ suppressPackageStartupMessages({
 })
 
 # --- Load data ---
-eigengenes <- read_csv("08_module_eigengenes_samples_leaf.csv", show_col_types = FALSE)
-ps_meta    <- readRDS("04_photosynthetic_index/data/leaf_metadata_ps_index.rds")
+eigengenes <- read_csv("data/08_module_eigengenes_samples_underground.csv", show_col_types = FALSE)
+root_meta  <- readRDS("04_photosynthetic_index/data/root_metadata_ps_index.rds")
+stem_meta  <- readRDS("04_photosynthetic_index/data/stem_metadata_ps_index.rds")
 
-# Output directory (served as static resources)
-dir.create("module_plots", showWarnings = FALSE)
+# Combine metadata
+ps_meta <- bind_rows(
+  root_meta %>% select(sample_id, ps_index, week),
+  stem_meta %>% select(sample_id, ps_index, week)
+)
+
+# Output directory
+dir.create("assets/module_plots_underground", showWarnings = FALSE, recursive = TRUE)
 
 # --- Reshape eigengenes to long format and join ps_index ---
 eigen_long <- eigengenes %>%
   pivot_longer(-sample_id, names_to = "module_col", values_to = "eigengene") %>%
-  mutate(module_label = sub("^ME_", "", module_col)) %>%
-  left_join(ps_meta %>% select(sample_id, ps_index, week), by = "sample_id") %>%
+  left_join(ps_meta, by = "sample_id") %>%
   filter(!is.na(ps_index))
 
-# Module color palette (must match WGCNA output colors)
-umap_df <- read.csv("09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
-
-# Build mapping: module_label (e.g. "m2_blue") -> ME column (e.g. "ME_blue") -> color hex
+# Load module info from UMAP data for colors
+umap_df <- read.csv("data/09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
 module_info <- umap_df %>%
   select(module_label, color) %>%
   distinct() %>%
-  mutate(me_col = paste0("ME_", sub("^m[0-9]+_", "", module_label)))
-
-cat("Module mapping:\n")
-print(module_info)
+  mutate(me_col = paste0("ME_", module_label))
 
 modules <- module_info$module_label
-cat("\nGenerating plots for", length(modules), "modules...\n")
+cat("Generating plots for", length(modules), "underground modules...\n")
 
 for (mod in modules) {
-  # Get the matching ME column name and hex color
-  row      <- module_info %>% filter(module_label == mod)
-  me_col   <- row$me_col
+  row       <- module_info %>% filter(module_label == mod)
+  me_col    <- row$me_col
   mod_color <- row$color
   
-  # Filter eigengene data for this module's ME column
   mod_data <- eigen_long %>% filter(module_col == me_col)
   if (nrow(mod_data) == 0) {
     cat("  Skipping", mod, "(no eigengene data)\n")
@@ -73,9 +72,9 @@ for (mod in modules) {
       plot.margin   = margin(10, 15, 10, 10)
     )
   
-  out_path <- file.path("module_plots", paste0("module_", mod, ".png"))
+  out_path <- file.path("assets", "module_plots_underground", paste0("module_", mod, ".png"))
   ggsave(out_path, plot = p, width = 5, height = 3.2, dpi = 120)
   cat("  Saved:", out_path, "\n")
 }
 
-cat("Done! Generated", length(modules), "module plots in ./module_plots/\n")
+cat("Done! Generated", length(modules), "underground module plots.\n")

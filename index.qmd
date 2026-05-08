@@ -56,38 +56,38 @@ filters:
 #| standalone: true
 #| viewerHeight: 900
 #| resources:
-#|   - vst_full_xz.rds
-#|   - metadata.rds
-#|   - mapping_full_xz.rds
-#|   - 09_TOM_UMAP_embedding_leaf.csv
-#|   - 09_top_edges_leaf.csv
-#|   - leaf_network_maizeminedescription.txt
-#|   - module_plots/module_m1_turquoise.png
-#|   - module_plots/module_m2_blue.png
-#|   - module_plots/module_m3_brown.png
-#|   - module_plots/module_m4_yellow.png
-#|   - module_plots/module_m5_green.png
-#|   - module_plots/module_m6_red.png
-#|   - module_plots/module_m7_black.png
-#|   - module_plots/module_m8_pink.png
-#|   - module_plots/module_m9_magenta.png
-#|   - module_plots/module_m10_purple.png
-#|   - 09_TOM_UMAP_embedding_underground.csv
-#|   - 09_top_edges_underground.csv
-#|   - 08_module_eigengenes_samples_underground.csv
-#|   - und_network_maizeminedescription.txt
-#|   - module_plots_underground/module_um1_turquoise.png
-#|   - module_plots_underground/module_um2_blue.png
-#|   - module_plots_underground/module_um3_brown.png
-#|   - module_plots_underground/module_um4_yellow.png
-#|   - module_plots_underground/module_um5_green.png
-#|   - module_plots_underground/module_um6_red.png
-#|   - module_plots_underground/module_um7_black.png
-#|   - module_plots_underground/module_um9_magenta.png
-#|   - welcome_assets/species_tree.png
-#|   - welcome_assets/umap_atlas.png
-#|   - welcome_assets/methodology_summary.png
-#|   - welcome_assets/gdd_plot.png
+#|   - data/vst_full_xz.rds
+#|   - data/metadata.rds
+#|   - data/mapping_full_xz.rds
+#|   - data/09_TOM_UMAP_embedding_leaf.csv
+#|   - data/09_top_edges_leaf.csv
+#|   - data/leaf_network_maizeminedescription.txt
+#|   - assets/module_plots/module_m1_turquoise.png
+#|   - assets/module_plots/module_m2_blue.png
+#|   - assets/module_plots/module_m3_brown.png
+#|   - assets/module_plots/module_m4_yellow.png
+#|   - assets/module_plots/module_m5_green.png
+#|   - assets/module_plots/module_m6_red.png
+#|   - assets/module_plots/module_m7_black.png
+#|   - assets/module_plots/module_m8_pink.png
+#|   - assets/module_plots/module_m9_magenta.png
+#|   - assets/module_plots/module_m10_purple.png
+#|   - data/09_TOM_UMAP_embedding_underground.csv
+#|   - data/09_top_edges_underground.csv
+#|   - data/08_module_eigengenes_samples_underground.csv
+#|   - data/und_network_maizeminedescription.txt
+#|   - assets/module_plots_underground/module_um1_turquoise.png
+#|   - assets/module_plots_underground/module_um2_blue.png
+#|   - assets/module_plots_underground/module_um3_brown.png
+#|   - assets/module_plots_underground/module_um4_yellow.png
+#|   - assets/module_plots_underground/module_um5_green.png
+#|   - assets/module_plots_underground/module_um6_red.png
+#|   - assets/module_plots_underground/module_um7_black.png
+#|   - assets/module_plots_underground/module_um9_magenta.png
+#|   - assets/welcome/species_tree.png
+#|   - assets/welcome/umap_atlas.png
+#|   - assets/welcome/methodology_summary.png
+#|   - assets/welcome/gdd_plot.png
 
 library(shiny)
 library(bslib)
@@ -102,64 +102,64 @@ library(base64enc)
 # Base URL for data files — GitHub Pages deployment
 base_url <- "https://maize-genetics.github.io/atlas-of-grass-senescence-dashboard/"
 
-if (!file.exists("vst_full_xz.rds")) download.file(paste0(base_url, "vst_full_xz.rds"), "vst_full_xz.rds")
-if (!file.exists("metadata.rds")) download.file(paste0(base_url, "metadata.rds"), "metadata.rds")
-if (!file.exists("mapping_full_xz.rds")) download.file(paste0(base_url, "mapping_full_xz.rds"), "mapping_full_xz.rds")
-if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_leaf.csv"), "09_TOM_UMAP_embedding_leaf.csv")
-if (!file.exists("09_top_edges_leaf.csv")) download.file(paste0(base_url, "09_top_edges_leaf.csv"), "09_top_edges_leaf.csv")
-if (!file.exists("leaf_network_maizeminedescription.txt")) download.file(paste0(base_url, "leaf_network_maizeminedescription.txt"), "leaf_network_maizeminedescription.txt")
-if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_underground.csv"), "09_TOM_UMAP_embedding_underground.csv")
-if (!file.exists("09_top_edges_underground.csv")) download.file(paste0(base_url, "09_top_edges_underground.csv"), "09_top_edges_underground.csv")
-if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file(paste0(base_url, "08_module_eigengenes_samples_underground.csv"), "08_module_eigengenes_samples_underground.csv")
-if (!file.exists("und_network_maizeminedescription.txt")) download.file(paste0(base_url, "und_network_maizeminedescription.txt"), "und_network_maizeminedescription.txt")
+if (!file.exists("data/vst_full_xz.rds")) download.file(paste0(base_url, "data/vst_full_xz.rds"), "data/vst_full_xz.rds")
+if (!file.exists("data/metadata.rds")) download.file(paste0(base_url, "data/metadata.rds"), "data/metadata.rds")
+if (!file.exists("data/mapping_full_xz.rds")) download.file(paste0(base_url, "data/mapping_full_xz.rds"), "data/mapping_full_xz.rds")
+if (!file.exists("data/09_TOM_UMAP_embedding_leaf.csv")) download.file(paste0(base_url, "data/09_TOM_UMAP_embedding_leaf.csv"), "data/09_TOM_UMAP_embedding_leaf.csv")
+if (!file.exists("data/09_top_edges_leaf.csv")) download.file(paste0(base_url, "data/09_top_edges_leaf.csv"), "data/09_top_edges_leaf.csv")
+if (!file.exists("data/leaf_network_maizeminedescription.txt")) download.file(paste0(base_url, "data/leaf_network_maizeminedescription.txt"), "data/leaf_network_maizeminedescription.txt")
+if (!file.exists("data/09_TOM_UMAP_embedding_underground.csv")) download.file(paste0(base_url, "data/09_TOM_UMAP_embedding_underground.csv"), "data/09_TOM_UMAP_embedding_underground.csv")
+if (!file.exists("data/09_top_edges_underground.csv")) download.file(paste0(base_url, "data/09_top_edges_underground.csv"), "data/09_top_edges_underground.csv")
+if (!file.exists("data/08_module_eigengenes_samples_underground.csv")) download.file(paste0(base_url, "data/08_module_eigengenes_samples_underground.csv"), "data/08_module_eigengenes_samples_underground.csv")
+if (!file.exists("data/und_network_maizeminedescription.txt")) download.file(paste0(base_url, "data/und_network_maizeminedescription.txt"), "data/und_network_maizeminedescription.txt")
 
 
-vst_counts <- readRDS("vst_full_xz.rds")
-metadata <- readRDS("metadata.rds")
-gene_og_map <- readRDS("mapping_full_xz.rds")
+vst_counts <- readRDS("data/vst_full_xz.rds")
+metadata <- readRDS("data/metadata.rds")
+gene_og_map <- readRDS("data/mapping_full_xz.rds")
 # Pre-compute default OG at load time to ensure instant startup render
 .default_og <- tryCatch({
   m <- gene_og_map$Orthogroup[gene_og_map$GeneID == "Zm00001eb319560"]
   if (length(m) > 0 && !is.na(m[1])) m[1] else "OG0007133"
 }, error = function(e) "OG0007133")
-umap_df <- read.csv("09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
-desc_df <- read.delim("leaf_network_maizeminedescription.txt", stringsAsFactors = FALSE)
-edges_df <- read.csv("09_top_edges_leaf.csv", stringsAsFactors = FALSE)
+umap_df <- read.csv("data/09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
+desc_df <- read.delim("data/leaf_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+edges_df <- read.csv("data/09_top_edges_leaf.csv", stringsAsFactors = FALSE)
 
-und_umap_df <- read.csv("09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
-und_desc_df <- read.delim("und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
-und_edges_df <- read.csv("09_top_edges_underground.csv", stringsAsFactors = FALSE)
+und_umap_df <- read.csv("data/09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
+und_desc_df <- read.delim("data/und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
+und_edges_df <- read.csv("data/09_top_edges_underground.csv", stringsAsFactors = FALSE)
 
-dir.create("welcome_assets", showWarnings = FALSE)
-if (!file.exists("welcome_assets/species_tree.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/species_tree.png"), "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
+dir.create("assets/welcome", showWarnings = FALSE)
+if (!file.exists("assets/welcome/species_tree.png")) {
+  tryCatch(download.file(paste0(base_url, "assets/welcome/species_tree.png"), "assets/welcome/species_tree.png", quiet = TRUE), error = function(e) NULL)
 }
-if (!file.exists("welcome_assets/umap_atlas.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/umap_atlas.png"), "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
+if (!file.exists("assets/welcome/umap_atlas.png")) {
+  tryCatch(download.file(paste0(base_url, "assets/welcome/umap_atlas.png"), "assets/welcome/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
 }
-if (!file.exists("welcome_assets/methodology_summary.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/methodology_summary.png"), "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
+if (!file.exists("assets/welcome/methodology_summary.png")) {
+  tryCatch(download.file(paste0(base_url, "assets/welcome/methodology_summary.png"), "assets/welcome/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
 }
-if (!file.exists("welcome_assets/gdd_plot.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/gdd_plot.png"), "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
+if (!file.exists("assets/welcome/gdd_plot.png")) {
+  tryCatch(download.file(paste0(base_url, "assets/welcome/gdd_plot.png"), "assets/welcome/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
 }
 
 welcome_b64 <- list(
-  species_tree = if(file.exists("welcome_assets/species_tree.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/species_tree.png")) else "",
-  umap_atlas = if(file.exists("welcome_assets/umap_atlas.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/umap_atlas.png")) else "",
-  methodology_summary = if(file.exists("welcome_assets/methodology_summary.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/methodology_summary.png")) else "",
-  gdd_plot = if(file.exists("welcome_assets/gdd_plot.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/gdd_plot.png")) else ""
+  species_tree = if(file.exists("assets/welcome/species_tree.png")) paste0("data:image/png;base64,", base64enc::base64encode("assets/welcome/species_tree.png")) else "",
+  umap_atlas = if(file.exists("assets/welcome/umap_atlas.png")) paste0("data:image/png;base64,", base64enc::base64encode("assets/welcome/umap_atlas.png")) else "",
+  methodology_summary = if(file.exists("assets/welcome/methodology_summary.png")) paste0("data:image/png;base64,", base64enc::base64encode("assets/welcome/methodology_summary.png")) else "",
+  gdd_plot = if(file.exists("assets/welcome/gdd_plot.png")) paste0("data:image/png;base64,", base64enc::base64encode("assets/welcome/gdd_plot.png")) else ""
 )
 
 # Pre-load all module PNGs as base64 data URIs at startup so they render instantly
-dir.create("module_plots", showWarnings = FALSE)
+dir.create("assets/module_plots", showWarnings = FALSE)
 module_names <- c("m1_turquoise", "m2_blue", "m3_brown", "m4_yellow", "m5_green",
                   "m6_red", "m7_black", "m8_pink", "m9_magenta", "m10_purple")
 module_plots_b64 <- setNames(lapply(module_names, function(mod) {
-  local_path <- paste0("module_plots/module_", mod, ".png")
+  local_path <- paste0("assets/module_plots/module_", mod, ".png")
   if (!file.exists(local_path)) {
     tryCatch(
-      download.file(paste0(base_url, "module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
+      download.file(paste0(base_url, "assets/module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
       error = function(e) NULL
     )
   }
@@ -168,14 +168,14 @@ module_plots_b64 <- setNames(lapply(module_names, function(mod) {
   } else NA_character_
 }), module_names)
 
-dir.create("module_plots_underground", showWarnings = FALSE)
+dir.create("assets/module_plots_underground", showWarnings = FALSE)
 und_module_names <- c("um1_turquoise", "um2_blue", "um3_brown", "um4_yellow", "um5_green",
                       "um6_red", "um7_black", "um8_pink", "um9_magenta")
 und_module_plots_b64 <- setNames(lapply(und_module_names, function(mod) {
-  local_path <- paste0("module_plots_underground/module_", mod, ".png")
+  local_path <- paste0("assets/module_plots_underground/module_", mod, ".png")
   if (!file.exists(local_path)) {
     tryCatch(
-      download.file(paste0(base_url, "module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
+      download.file(paste0(base_url, "assets/module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
       error = function(e) NULL
     )
   }
