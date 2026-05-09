@@ -11,3 +11,10 @@ index_files/
 
 # Stray copied service worker sometimes dropped at repo root during preview
 /shinylive-sw.js
+
+# Pixi-managed environments (heavy; reproduce from pixi.toml + pixi.lock)
+/.pixi/
+pixi.lock
+
+# R user-library extras installed at runtime by `pixi run setup-shinylive`
+# (e.g. shinylive from CRAN; their on-disk files live inside .pixi/envs/)

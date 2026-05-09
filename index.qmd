@@ -99,9 +99,27 @@ library(stringr)
 library(base64enc)
 
 # --- 1. DATA LOADING (Must be at the TOP) ---
-# Base URL for data files — GitHub Pages deployment
-base_url <- "https://maize-genetics.github.io/atlas-of-grass-senescence-dashboard/"
+# Resolve `base_url` to the directory that hosts index.html so data files are
+# fetched from whoever is serving the dashboard — `quarto preview` locally,
+# the deployed GitHub Pages site, etc. WebR's download.file() requires
+# absolute URLs. We can't read `window.location` because R runs in a Web
+# Worker (no `window`), but `self.location.href` gives us the worker URL
+# (.../index_files/libs/quarto-contrib/shinylive-*/shinylive/webr/webr-worker.js)
+# from which we can strip everything from `index_files/` onward to recover
+# the page directory.
+.fallback_base_url <- "https://maize-genetics.github.io/atlas-of-grass-senescence-dashboard/"
+base_url <- tryCatch(
+  {
+    worker_url <- webr::eval_js("self.location.href")
+    if (is.character(worker_url) && length(worker_url) >= 1 && nzchar(worker_url[1])) {
+      page_dir <- sub("index_files/.*$", "", worker_url[1])
+      if (page_dir == worker_url[1]) .fallback_base_url else page_dir
+    } else .fallback_base_url
+  },
+  error = function(e) .fallback_base_url
+)
 
+dir.create("data", showWarnings = FALSE, recursive = TRUE)
 if (!file.exists("data/vst_full_xz.rds")) download.file(paste0(base_url, "data/vst_full_xz.rds"), "data/vst_full_xz.rds")
 if (!file.exists("data/metadata.rds")) download.file(paste0(base_url, "data/metadata.rds"), "data/metadata.rds")
 if (!file.exists("data/mapping_full_xz.rds")) download.file(paste0(base_url, "data/mapping_full_xz.rds"), "data/mapping_full_xz.rds")
@@ -130,7 +148,7 @@ und_umap_df <- read.csv("data/09_TOM_UMAP_embedding_underground.csv", stringsAsF
 und_desc_df <- read.delim("data/und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
 und_edges_df <- read.csv("data/09_top_edges_underground.csv", stringsAsFactors = FALSE)
 
-dir.create("assets/welcome", showWarnings = FALSE)
+dir.create("assets/welcome", showWarnings = FALSE, recursive = TRUE)
 if (!file.exists("assets/welcome/species_tree.png")) {
   tryCatch(download.file(paste0(base_url, "assets/welcome/species_tree.png"), "assets/welcome/species_tree.png", quiet = TRUE), error = function(e) NULL)
 }
@@ -152,7 +170,7 @@ welcome_b64 <- list(
 )
 
 # Pre-load all module PNGs as base64 data URIs at startup so they render instantly
-dir.create("assets/module_plots", showWarnings = FALSE)
+dir.create("assets/module_plots", showWarnings = FALSE, recursive = TRUE)
 module_names <- c("m1_turquoise", "m2_blue", "m3_brown", "m4_yellow", "m5_green",
                   "m6_red", "m7_black", "m8_pink", "m9_magenta", "m10_purple")
 module_plots_b64 <- setNames(lapply(module_names, function(mod) {
@@ -168,7 +186,7 @@ module_plots_b64 <- setNames(lapply(module_names, function(mod) {
   } else NA_character_
 }), module_names)
 
-dir.create("assets/module_plots_underground", showWarnings = FALSE)
+dir.create("assets/module_plots_underground", showWarnings = FALSE, recursive = TRUE)
 und_module_names <- c("um1_turquoise", "um2_blue", "um3_brown", "um4_yellow", "um5_green",
                       "um6_red", "um7_black", "um8_pink", "um9_magenta")
 und_module_plots_b64 <- setNames(lapply(und_module_names, function(mod) {

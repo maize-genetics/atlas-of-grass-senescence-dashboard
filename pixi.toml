@@ -1,0 +1,48 @@
+[workspace]
+name        = "senescence-atlas"
+description = "Quarto dashboard for the Grass Senescence Atlas paper."
+version     = "0.1.0"
+channels    = ["conda-forge"]
+platforms   = ["osx-arm64", "osx-64", "linux-64"]
+license     = "MIT"
+readme      = "README.md"
+repository  = "https://github.com/maize-genetics/atlas-of-grass-senescence-dashboard"
+
+
+[dependencies]
+quarto       = ">=1.7"
+r-base       = ">=4.4,<4.6"
+r-shiny      = "*"
+r-bslib      = "*"
+r-plotly     = "*"
+r-ggplot2    = "*"
+r-dplyr      = "*"
+r-tidyr      = "*"
+r-stringr    = "*"
+r-base64enc  = "*"
+r-readr      = "*"
+
+
+# NOTE: both setup-* commands are needed since shiny live isn't on conda-forge...
+[tasks]
+setup-shinylive-r = """
+Rscript -e 'min_version <- "0.4.0"; \
+  needs <- !requireNamespace("shinylive", quietly = TRUE) || \
+    utils::packageVersion("shinylive") < min_version; \
+  if (needs) install.packages("shinylive", repos = "https://cloud.r-project.org") \
+  else cat("shinylive", as.character(utils::packageVersion("shinylive")), "already installed\\n")'
+"""
+
+setup-quarto-ext = """
+test -f _extensions/quarto-ext/shinylive/_extension.yml \
+  && echo 'Quarto shinylive extension already present' \
+  || quarto add quarto-ext/shinylive --no-prompt --quiet
+"""
+
+setup               = { depends-on = ["setup-shinylive-r", "setup-quarto-ext"] }
+render              = { cmd = "quarto render index.qmd", depends-on = ["setup"] }
+preview             = { cmd = "quarto preview index.qmd", depends-on = ["setup"] }
+modules-leaf        = "Rscript scripts/generate_module_plots.R"
+modules-underground = "Rscript scripts/generate_module_plots_underground.R"
+clean               = "rm -rf .quarto index.html index_files shinylive-sw.js"
+r                   = "R --no-save"
