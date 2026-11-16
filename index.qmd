@@ -1,10 +1,9 @@
 ---
-title: "Grass Senescence Atlas"
+title: "Atlas of Grass Senescence Dashboard"
 engine: knitr
-format: 
+format:
   dashboard:
     theme: flatly
-    nav-buttons: [github]
     embed-resources: false
 filters:
   - shinylive
@@ -13,52 +12,54 @@ filters:
 # Dashboard
 
 ```{=html}
-<div id="loading-disclaimer-banner" style="position: absolute; top: 12px; right: 80px; z-index: 1050; color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; cursor: pointer; pointer-events: auto;" onclick="this.remove()">
-  Notice: Data loads in 1-2 min. Please do not close or refresh this page. &times;
+<style>
+  /* The app has its own navigation bar: hide Quarto's and let the app fill the window. */
+  #quarto-dashboard-header { display: none !important; }
+  #dashboard, #dashboard .bslib-grid, #dashboard .card, #dashboard .card-body,
+  .quarto-dashboard-content, .quarto-dashboard-content > .tab-content {
+    padding: 0 !important; margin: 0 !important; gap: 0 !important;
+  }
+  #dashboard .card { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .shinylive-wrapper { margin: 0 !important; border: 0 !important; }
+  .shinylive-wrapper .shinylive-container,
+  .shinylive-wrapper .shinylive-viewer,
+  .shinylive-wrapper iframe { height: 100vh !important; }
+  html, body { overflow: hidden; }
+  #loading-disclaimer-banner {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1050;
+    color: #721c24; background-color: #f8d7da; padding: 4px 12px; border-radius: 4px;
+    font-size: 0.85rem; font-weight: bold; border: 1px solid #f5c6cb; cursor: pointer;
+  }
+</style>
+<div id="loading-disclaimer-banner" onclick="this.remove()">
+  Loading the atlas: the first visit can take up to a minute. Please do not close or refresh this page. &times;
 </div>
 <script>
   function removeBanner() {
     var banner = document.getElementById('loading-disclaimer-banner');
     if (banner) banner.remove();
   }
-
-  // Method 1: Poll for dashboard content
+  // Remove the notice once the app (inside the shinylive iframe) has rendered its welcome card
   var checkLoad = setInterval(function() {
-    if (document.getElementById('methodology-card')) {
-      removeBanner();
-      clearInterval(checkLoad);
-    }
+    var f = document.querySelector('.shinylive-wrapper iframe');
+    var d = f && f.contentDocument;
+    if (d && d.getElementById('methodology-card')) { removeBanner(); clearInterval(checkLoad); }
   }, 500);
-
-  // Method 2: Fallback to any user interaction (using capture to catch events before they are stopped)
-  window.addEventListener('mousedown', function() {
-    removeBanner();
-    clearInterval(checkLoad);
-  }, { once: true, capture: true });
-
-  // Method 3: Shiny connection event
-  document.addEventListener('shiny:connected', function() {
-    removeBanner();
-    clearInterval(checkLoad);
-  });
-
-  // Method 4: 20-second timer fallback
-  setTimeout(function() {
-    removeBanner();
-    clearInterval(checkLoad);
-  }, 20000);
+  window.addEventListener('mousedown', function() { removeBanner(); clearInterval(checkLoad); }, { once: true, capture: true });
+  setTimeout(function() { removeBanner(); clearInterval(checkLoad); }, 90000);
 </script>
 ```
-
-
 
 ```{shinylive-r}
 #| standalone: true
 #| viewerHeight: 900
 #| resources:
-#|   - vst_full_xz.rds
 #|   - metadata.rds
 #|   - mapping_full_xz.rds
+#|   - expr_shards/index.csv
+#|   - expr_shards/samples.txt
+#|   - weather_daily.csv
+#|   - ps_index.csv
 #|   - 09_TOM_UMAP_embedding_leaf.csv
 #|   - 09_top_edges_leaf.csv
 #|   - leaf_network_maizeminedescription.txt
@@ -74,7 +75,6 @@ filters:
 #|   - module_plots/module_m10_purple.png
 #|   - 09_TOM_UMAP_embedding_underground.csv
 #|   - 09_top_edges_underground.csv
-#|   - 08_module_eigengenes_samples_underground.csv
 #|   - und_network_maizeminedescription.txt
 #|   - module_plots_underground/module_um1_turquoise.png
 #|   - module_plots_underground/module_um2_blue.png
@@ -83,6 +83,7 @@ filters:
 #|   - module_plots_underground/module_um5_green.png
 #|   - module_plots_underground/module_um6_red.png
 #|   - module_plots_underground/module_um7_black.png
+#|   - module_plots_underground/module_um8_pink.png
 #|   - module_plots_underground/module_um9_magenta.png
 #|   - welcome_assets/species_tree.png
 #|   - welcome_assets/umap_atlas.png
@@ -96,131 +97,133 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(stringr)
-library(base64enc)
 
-# --- 1. DATA LOADING (Must be at the TOP) ---
-# Base URL for data files — GitHub Pages deployment
-base_url <- "https://maize-genetics.github.io/atlas-of-grass-senescence-dashboard/"
+"%||%" <- function(a, b) if (is.null(a)) b else a
 
-if (!file.exists("vst_full_xz.rds")) download.file(paste0(base_url, "vst_full_xz.rds"), "vst_full_xz.rds")
-if (!file.exists("metadata.rds")) download.file(paste0(base_url, "metadata.rds"), "metadata.rds")
-if (!file.exists("mapping_full_xz.rds")) download.file(paste0(base_url, "mapping_full_xz.rds"), "mapping_full_xz.rds")
-if (!file.exists("09_TOM_UMAP_embedding_leaf.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_leaf.csv"), "09_TOM_UMAP_embedding_leaf.csv")
-if (!file.exists("09_top_edges_leaf.csv")) download.file(paste0(base_url, "09_top_edges_leaf.csv"), "09_top_edges_leaf.csv")
-if (!file.exists("leaf_network_maizeminedescription.txt")) download.file(paste0(base_url, "leaf_network_maizeminedescription.txt"), "leaf_network_maizeminedescription.txt")
-if (!file.exists("09_TOM_UMAP_embedding_underground.csv")) download.file(paste0(base_url, "09_TOM_UMAP_embedding_underground.csv"), "09_TOM_UMAP_embedding_underground.csv")
-if (!file.exists("09_top_edges_underground.csv")) download.file(paste0(base_url, "09_top_edges_underground.csv"), "09_top_edges_underground.csv")
-if (!file.exists("08_module_eigengenes_samples_underground.csv")) download.file(paste0(base_url, "08_module_eigengenes_samples_underground.csv"), "08_module_eigengenes_samples_underground.csv")
-if (!file.exists("und_network_maizeminedescription.txt")) download.file(paste0(base_url, "und_network_maizeminedescription.txt"), "und_network_maizeminedescription.txt")
-
-
-vst_counts <- readRDS("vst_full_xz.rds")
-metadata <- readRDS("metadata.rds")
-gene_og_map <- readRDS("mapping_full_xz.rds")
-# Pre-compute default OG at load time to ensure instant startup render
-.default_og <- tryCatch({
-  m <- gene_og_map$Orthogroup[gene_og_map$GeneID == "Zm00001eb319560"]
-  if (length(m) > 0 && !is.na(m[1])) m[1] else "OG0007133"
-}, error = function(e) "OG0007133")
-umap_df <- read.csv("09_TOM_UMAP_embedding_leaf.csv", stringsAsFactors = FALSE)
-desc_df <- read.delim("leaf_network_maizeminedescription.txt", stringsAsFactors = FALSE)
-edges_df <- read.csv("09_top_edges_leaf.csv", stringsAsFactors = FALSE)
-
-und_umap_df <- read.csv("09_TOM_UMAP_embedding_underground.csv", stringsAsFactors = FALSE)
-und_desc_df <- read.delim("und_network_maizeminedescription.txt", stringsAsFactors = FALSE)
-und_edges_df <- read.csv("09_top_edges_underground.csv", stringsAsFactors = FALSE)
-
-dir.create("welcome_assets", showWarnings = FALSE)
-if (!file.exists("welcome_assets/species_tree.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/species_tree.png"), "welcome_assets/species_tree.png", quiet = TRUE), error = function(e) NULL)
-}
-if (!file.exists("welcome_assets/umap_atlas.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/umap_atlas.png"), "welcome_assets/umap_atlas.png", quiet = TRUE), error = function(e) NULL)
-}
-if (!file.exists("welcome_assets/methodology_summary.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/methodology_summary.png"), "welcome_assets/methodology_summary.png", quiet = TRUE), error = function(e) NULL)
-}
-if (!file.exists("welcome_assets/gdd_plot.png")) {
-  tryCatch(download.file(paste0(base_url, "welcome_assets/gdd_plot.png"), "welcome_assets/gdd_plot.png", quiet = TRUE), error = function(e) NULL)
+# =====================================================================
+# 1. FILE ACCESS
+# Data files are fetched on demand from the site serving this page
+# (GitHub Pages when deployed, quarto preview when testing locally).
+# =====================================================================
+site_root <- function(session) {
+  cd <- session$clientData
+  path <- sub("(index_files/.*)?app_[^/]+/?$", "", isolate(cd$url_pathname))
+  port <- isolate(cd$url_port)
+  paste0(isolate(cd$url_protocol), "//", isolate(cd$url_hostname),
+         if (!is.null(port) && nzchar(port)) paste0(":", port), path)
 }
 
-welcome_b64 <- list(
-  species_tree = if(file.exists("welcome_assets/species_tree.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/species_tree.png")) else "",
-  umap_atlas = if(file.exists("welcome_assets/umap_atlas.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/umap_atlas.png")) else "",
-  methodology_summary = if(file.exists("welcome_assets/methodology_summary.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/methodology_summary.png")) else "",
-  gdd_plot = if(file.exists("welcome_assets/gdd_plot.png")) paste0("data:image/png;base64,", base64enc::base64encode("welcome_assets/gdd_plot.png")) else ""
-)
-
-# Pre-load all module PNGs as base64 data URIs at startup so they render instantly
-dir.create("module_plots", showWarnings = FALSE)
-module_names <- c("m1_turquoise", "m2_blue", "m3_brown", "m4_yellow", "m5_green",
-                  "m6_red", "m7_black", "m8_pink", "m9_magenta", "m10_purple")
-module_plots_b64 <- setNames(lapply(module_names, function(mod) {
-  local_path <- paste0("module_plots/module_", mod, ".png")
-  if (!file.exists(local_path)) {
-    tryCatch(
-      download.file(paste0(base_url, "module_plots/module_", mod, ".png"), local_path, quiet = TRUE),
-      error = function(e) NULL
-    )
+fetch_file <- function(rel, root) {
+  if (!file.exists(rel)) {
+    d <- dirname(rel)
+    if (d != ".") dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    tmp <- paste0(rel, ".part")
+    download.file(paste0(root, rel), tmp, mode = "wb", quiet = TRUE)
+    file.rename(tmp, rel)
   }
-  if (file.exists(local_path)) {
-    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
-  } else NA_character_
-}), module_names)
+  rel
+}
 
-dir.create("module_plots_underground", showWarnings = FALSE)
-und_module_names <- c("um1_turquoise", "um2_blue", "um3_brown", "um4_yellow", "um5_green",
-                      "um6_red", "um7_black", "um8_pink", "um9_magenta")
-und_module_plots_b64 <- setNames(lapply(und_module_names, function(mod) {
-  local_path <- paste0("module_plots_underground/module_", mod, ".png")
-  if (!file.exists(local_path)) {
-    tryCatch(
-      download.file(paste0(base_url, "module_plots_underground/module_", mod, ".png"), local_path, quiet = TRUE),
-      error = function(e) NULL
-    )
+DATA <- new.env()
+
+load_network <- function(kind, root) {
+  f <- if (kind == "leaf") {
+    c("09_TOM_UMAP_embedding_leaf.csv", "09_top_edges_leaf.csv", "leaf_network_maizeminedescription.txt")
+  } else {
+    c("09_TOM_UMAP_embedding_underground.csv", "09_top_edges_underground.csv", "und_network_maizeminedescription.txt")
   }
-  if (file.exists(local_path)) {
-    paste0("data:image/png;base64,", base64enc::base64encode(local_path))
-  } else NA_character_
-}), und_module_names)
+  umap  <- read.csv(fetch_file(f[1], root), stringsAsFactors = FALSE)
+  edges <- read.csv(fetch_file(f[2], root), stringsAsFactors = FALSE)
+  desc  <- read.delim(fetch_file(f[3], root), stringsAsFactors = FALSE, check.names = FALSE)
+  names(desc)[1:2] <- c("gene_id_Zm", "OG")
+  desc$Description <- as.character(desc[[grep("^description", names(desc))[1]]])
+  desc$sink_source <- if ("sink_source" %in% names(desc)) as.character(desc$sink_source) else NA_character_
 
-# Add Zea mays Gene IDs to the UMAP data for hover text using the description file
-zm_map <- desc_df %>% 
-  group_by(OG) %>%
-  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+  og_desc <- desc %>%
+    group_by(OG) %>%
+    summarise(
+      Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "),
+      Description = {
+        d <- unique(Description[!is.na(Description) & Description != ""])
+        if (length(d) == 0) "No description available" else paste(d, collapse = " / ")
+      },
+      .groups = "drop"
+    )
+  umap <- umap %>%
+    left_join(og_desc %>% select(OG, Zea_mays_genes), by = c("gene" = "OG")) %>%
+    mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+  coords <- umap %>% select(gene, UMAP1, UMAP2)
+  edges <- edges %>%
+    left_join(coords, by = c("from" = "gene")) %>% rename(x0 = UMAP1, y0 = UMAP2) %>%
+    left_join(coords, by = c("to" = "gene")) %>% rename(x1 = UMAP1, y1 = UMAP2) %>%
+    filter(!is.na(x0), !is.na(x1))
+  modules <- umap %>% distinct(module_label, color, module_num) %>% arrange(module_num)
+  list(umap = umap, edges = edges, desc = desc, og_desc = og_desc, modules = modules,
+       plot_dir = if (kind == "leaf") "module_plots" else "module_plots_underground")
+}
 
-umap_df <- umap_df %>%
-  left_join(zm_map, by = c("gene" = "OG")) %>%
-  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+load_atlas <- function(root, progress = function(value, detail) NULL) {
+  if (isTRUE(DATA$ready)) return(invisible(TRUE))
+  progress(0.05, "sample metadata")
+  md <- as.data.frame(readRDS(fetch_file("metadata.rds", root)))
+  md <- md %>%
+    transmute(sample_id, species, accession, tissue, tissue_type = as.character(tissue_type),
+              season = as.character(season), week = as.integer(week),
+              julian_days = as.integer(julian_days), date = as.Date(date_formatted), life_history)
+  progress(0.15, "photosynthetic index")
+  ps <- read.csv(fetch_file("ps_index.csv", root), stringsAsFactors = FALSE)
+  md$ps_index <- ps$ps_index[match(md$sample_id, ps$sample_id)]
+  DATA$metadata <- md
+  DATA$avail <- md %>% distinct(species, accession, season, tissue_type)
+  DATA$acc2sp <- with(distinct(md, accession, species), setNames(species, accession))
 
-# Pre-join UMAP coordinates onto edges so we don't recalculate in every reactive update
-umap_coords <- umap_df %>% select(gene, UMAP1, UMAP2)
-edges_df <- edges_df %>%
-  left_join(umap_coords, by = c("from" = "gene")) %>%
-  rename(x0 = UMAP1, y0 = UMAP2) %>%
-  left_join(umap_coords, by = c("to" = "gene")) %>%
-  rename(x1 = UMAP1, y1 = UMAP2) %>%
-  filter(!is.na(x0), !is.na(x1))
+  progress(0.25, "gene → orthogroup map")
+  gm <- readRDS(fetch_file("mapping_full_xz.rds", root))
+  DATA$gene2og <- setNames(gm$Orthogroup, gm$GeneID)
 
-# --- Pre-processing Underground ---
-und_zm_map <- und_desc_df %>% 
-  group_by(OG) %>%
-  summarise(Zea_mays_genes = paste(unique(gene_id_Zm), collapse = ", "), .groups = "drop")
+  progress(0.55, "expression index")
+  DATA$expr_index <- read.csv(fetch_file("expr_shards/index.csv", root), stringsAsFactors = FALSE)
+  DATA$samples <- readLines(fetch_file("expr_shards/samples.txt", root))
+  DATA$gene_choices <- c(sort(unique(gm$GeneID[gm$Species == "Zea_mays"])), DATA$expr_index$OG)
 
-und_umap_df <- und_umap_df %>%
-  left_join(und_zm_map, by = c("gene" = "OG")) %>%
-  mutate(Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes))
+  progress(0.65, "weather")
+  w <- read.csv(fetch_file("weather_daily.csv", root))
+  w$season <- as.character(w$season)
+  DATA$weather <- w %>%
+    arrange(season, julian_day) %>%
+    group_by(season) %>%
+    mutate(cum_gdd = cumsum(ifelse(julian_day >= 200 & !is.na(gdd_C), gdd_C, 0))) %>%
+    ungroup()
 
-und_umap_coords <- und_umap_df %>% select(gene, UMAP1, UMAP2)
-und_edges_df <- und_edges_df %>%
-  left_join(und_umap_coords, by = c("from" = "gene")) %>%
-  rename(x0 = UMAP1, y0 = UMAP2) %>%
-  left_join(und_umap_coords, by = c("to" = "gene")) %>%
-  rename(x1 = UMAP1, y1 = UMAP2) %>%
-  filter(!is.na(x0), !is.na(x1))
+  progress(0.75, "co-expression networks")
+  DATA$leaf <- load_network("leaf", root)
+  DATA$und  <- load_network("underground", root)
+  DATA$ready <- TRUE
+  invisible(TRUE)
+}
 
+# One orthogroup = one row in a uint16 shard (VST x 1000); see data_prep/build_expression_shards.py
+get_expression <- function(og, root) {
+  i <- match(og, DATA$expr_index$OG)
+  if (is.na(i)) return(NULL)
+  f <- fetch_file(sprintf("expr_shards/shard_%03d.bin", DATA$expr_index$shard[i]), root)
+  n <- length(DATA$samples)
+  raw <- readBin(f, "raw", n = file.size(f))
+  off <- DATA$expr_index$row[i] * n * 2
+  v <- readBin(raw[(off + 1):(off + 2 * n)], "integer", n = n, size = 2, signed = FALSE, endian = "little")
+  data.frame(sample_id = DATA$samples, expression = v / 1000, stringsAsFactors = FALSE)
+}
 
-# --- 2. PALETTES ---
+# =====================================================================
+# 2. LABELS & PALETTES
+# =====================================================================
+pretty_name <- function(x) gsub("_", " ", x)
+
+tissue_labels <- c(leaf = "Leaf", root = "Root", fine_roots = "Fine roots",
+                   thick_roots = "Thick roots", rhizome = "Rhizome", stalk = "Stalk")
+tissue_groups <- list(Leaf = "leaf", Root = c("root", "fine_roots", "thick_roots"),
+                      Stem = c("rhizome", "stalk"))
+
 species_palette <- c(
   "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Bothriochloa_laguroides"="#2CA02C",
   "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD", "Miscanthus_giganteus"="#8C564B",
@@ -228,7 +231,7 @@ species_palette <- c(
   "Sorghum_bicolor"="#FF9896", "Themeda_triandra"="#E6AB02", "Tripsacum_dactyloides"="#17BECF",
   "Zea_diploperennis"="#BCBD22", "Zea_mays"="#36eb11"
 )
-accession_palette_named <- c(
+accession_palette <- c(
   "Anatherum_virginicum"="#1F77B4", "Andropogon_gerardii"="#FF7F0E", "Ag_Niagara"="#A6CEE3",
   "Bothriochloa_laguroides"="#2CA02C", "Chrysopogon_zizanioides"="#D62728", "Elionorus_tripsacoides"="#9467BD",
   "Miscanthus_giganteus"="#8C564B", "Panicum_virgatum_A1"="#98DF8A", "Panicum_virgatum_Kanlow"="#2CA02C",
@@ -239,50 +242,569 @@ accession_palette_named <- c(
   "Td_TX"="#084081", "Td_Iuka"="#0f93e4", "Td_Texas_Sue"="#0cc688", "Themeda_triandra"="#E6AB02",
   "Zea_diploperennis"="#BCBD22", "Zd_momo"="#006D2C", "Zm_lh244"="#36eb11", "Zm_lh287Xlh244"="#77e204"
 )
-tissue_type_palette <- c("leaf" = "#30e004", "root" = "#ee6766", "stem" = "#07cde3")
-life_history_palette <- c("annual" = "#B1ECB8", "perennial" = "#D3E4F5")
+tissue_palette <- c(leaf = "#30e004", root = "#ee6766", stem = "#07cde3")
+tissue_type_palette <- c(leaf = "#30e004", root = "#ee6766", fine_roots = "#f4a3a2",
+                         thick_roots = "#b33a3a", rhizome = "#07cde3", stalk = "#2a7fb8")
+life_history_palette <- c(annual = "#7fc97f", perennial = "#6a9fd4")
+season_palette <- c("2023" = "#7b6fb3", "2024" = "#e08a2c")
 
-# --- 3. HELPER LOGIC ---
-week_lookup <- data.frame(
-  week = 1:14,
-  julian = c(208, 215, 222, 229, 235, 242, 248, 256, 263, 270, 277, 284, 290, 298),
-  month = c("July", "Aug", "Aug", "Aug", "Aug", "Sept", "Sept", "Sept", "Sept", "Oct", "Oct", "Oct", "Oct", "Oct")
-)
-month_unique <- week_lookup %>%
-  group_by(month) %>%
-  summarise(start = min(week), end = max(week), mid = mean(c(min(week), max(week))))
+palette_for <- function(gv) {
+  switch(gv, species = species_palette, accession = accession_palette, tissue = tissue_palette,
+         tissue_type = tissue_type_palette, life_history = life_history_palette,
+         season = season_palette)
+}
 
-# --- 4. UI ---
+weather_vars <- c("Min air temp" = "min_air_C", "Mean air temp" = "mean_air_C",
+                  "Max air temp" = "max_air_C", "Soil temp" = "soil_C", "Weekly GDD" = "gdd_C")
+weather_axis <- c(min_air_C = "Min air temp (°C)", mean_air_C = "Mean air temp (°C)",
+                  max_air_C = "Max air temp (°C)", soil_C = "Soil temp (°C)",
+                  gdd_C = "Weekly mean GDD (°C)")
+weather_short <- c(min_air_C = "Min air temp", mean_air_C = "Mean air temp", max_air_C = "Max air temp",
+                   soil_C = "Soil temp", gdd_C = "Weekly GDD")
+
+# Light green -> yellow progression through the season (background only)
+month_fill <- c(Jul = "rgba(76,153,70,0.075)", Aug = "rgba(140,192,82,0.07)",
+                Sep = "rgba(201,208,72,0.075)", Oct = "rgba(246,214,84,0.10)", Nov = "rgba(246,214,84,0.10)")
+TEMP_INK <- "#3d3d3d"     # temperature series + its axis
+GDD_INK  <- "#a8701a"     # GDD bars + their axis
+GREY_CTX <- "#c9c9c9"     # de-emphasised groups
+
+# =====================================================================
+# 3. HELPERS
+# =====================================================================
+season_tag <- function(s) paste(sort(unique(s)), collapse = ", ")
+
+tissue_choices <- function(seasons) {
+  a <- DATA$avail %>% filter(season %in% seasons)
+  out <- lapply(tissue_groups, function(tt) {
+    tt <- tt[tt %in% a$tissue_type]
+    if (!length(tt)) return(NULL)
+    setNames(tt, sapply(tt, function(t)
+      paste0(tissue_labels[[t]], " · ", season_tag(a$season[a$tissue_type == t]))))
+  })
+  Filter(Negate(is.null), out)
+}
+
+species_choices <- function(seasons, tissues) {
+  a <- DATA$avail %>% filter(season %in% seasons, tissue_type %in% tissues)
+  sp <- sort(unique(DATA$avail$species))
+  setNames(sp, sapply(sp, function(s) {
+    x <- a$season[a$species == s]
+    if (length(x)) paste0(pretty_name(s), " · ", season_tag(x))
+    else paste0(pretty_name(s), " \u00b7 no data for this season/tissue")
+  }))
+}
+
+accession_choices <- function(accs) {
+  a <- DATA$avail %>% filter(accession %in% accs)
+  sp <- sort(unique(a$species))
+  setNames(lapply(sp, function(s) {
+    ac <- sort(unique(a$accession[a$species == s]))
+    setNames(ac, sapply(ac, function(x) paste0(x, " · ", season_tag(a$season[a$accession == x]))))
+  }), pretty_name(sp))
+}
+
+default_accessions <- function(species, accs) {
+  unlist(lapply(species, function(s) {
+    ac <- accs[DATA$acc2sp[accs] == s]
+    if (s == "Tripsacum_dactyloides" && "Td_Pete" %in% ac) "Td_Pete" else ac
+  }))
+}
+
+weather_by_week <- function(var, window) {
+  w <- DATA$weather
+  if (window == "calendar") {
+    w %>%
+      filter(julian_day >= 200) %>%
+      mutate(week = floor((julian_day - 196) / 7)) %>%
+      group_by(season, week) %>%
+      summarise(value = mean(.data[[var]], na.rm = TRUE), .groups = "drop")
+  } else {
+    d <- DATA$metadata %>% distinct(season, week, julian_days)
+    d$value <- mapply(function(s, j) {
+      x <- w[w$season == s & w$julian_day >= j - 6 & w$julian_day <= j, ]
+      mean(x[[var]], na.rm = TRUE)
+    }, d$season, d$julian_days)
+    d %>% group_by(season, week) %>% summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
+  }
+}
+
+temp_colour <- function(v, lim) {
+  r <- colorRamp(c("#2166ac", "#4393c3", "#92c5de", "#f4a582", "#d6604d", "#b2182b"))(pmin(pmax((v - lim[1]) / diff(lim), 0), 1))
+  rgb(r[, 1], r[, 2], r[, 3], maxColorValue = 255)
+}
+
+MONO <- "'Roboto Mono', ui-monospace, monospace"
+plot_style <- function(p, file_stub) {
+  p %>% layout(font = list(family = MONO, size = 11, color = "#444"),
+               hoverlabel = list(font = list(family = MONO, size = 11))) %>%
+    config(displaylogo = FALSE,
+               modeBarButtonsToRemove = c("lasso2d", "select2d", "autoScale2d", "toggleSpikelines"),
+               toImageButtonOptions = list(format = "svg", filename = file_stub))
+}
+axis_style <- function(...) {
+  modifyList(list(showgrid = FALSE, zeroline = FALSE, showline = TRUE, linecolor = "#bdbdbd",
+                  ticks = "outside", tickcolor = "#bdbdbd", tickfont = list(color = "#555", size = 11),
+                  titlefont = list(color = "#555", size = 12)), list(...))
+}
+abbrev_species <- function(g) {
+  parts <- strsplit(g, "_")[[1]]
+  if (length(parts) < 2) return(pretty_name(g))
+  paste0(substr(parts[1], 1, 1), ". ", paste(parts[-1], collapse = " "))
+}
+group_label <- function(g, group_var) {
+  if (group_var == "species") paste0("<i>", abbrev_species(g), "</i>") else pretty_name(g)
+}
+# Push labels apart vertically so direct labels never overlap
+spread_labels <- function(y, gap) {
+  o <- order(y); ys <- y[o]
+  if (length(ys) > 1) for (i in 2:length(ys)) ys[i] <- max(ys[i], ys[i - 1] + gap)
+  out <- numeric(length(y)); out[o] <- ys; out
+}
+
+make_timecourse <- function(df, s, group_var, y_rng, wx = NULL, wx_var = NULL, highlight = "", file_stub = "timecourse") {
+  d <- df %>% filter(season == s)
+  sm <- d %>%
+    group_by(week, group = as.character(.data[[group_var]])) %>%
+    summarise(mean_expr = mean(expression, na.rm = TRUE),
+              se_expr = if (n() > 1) sd(expression, na.rm = TRUE) / sqrt(n()) else 0,
+              n = n(), .groups = "drop") %>%
+    arrange(group, week)
+  pal <- palette_for(group_var)
+  groups <- unique(sm$group)
+  hl <- if (!is.null(highlight) && nzchar(highlight) && highlight %in% groups) highlight else NULL
+  direct <- length(groups) <= 8
+  bars <- !is.null(wx) && identical(wx_var, "gdd_C")
+  ex_ax <- if (bars) "y2" else "y"     # GDD bars must sit on the primary axis to draw underneath
+  wx_ax <- if (bars) "y" else "y2"
+
+  wk <- DATA$metadata %>% filter(season == s) %>%
+    group_by(week) %>% summarise(d = min(date), .groups = "drop") %>% arrange(week)
+  ticktext <- paste0("w", wk$week, "<br><span style='color:#999'>", format(wk$d, "%b %d"), "</span>")
+  mon <- format(wk$d, "%b")
+  runs <- rle(mon); ends <- cumsum(runs$lengths); starts <- ends - runs$lengths + 1
+  shapes <- lapply(seq_along(runs$values), function(i) list(
+    type = "rect", xref = "x", yref = "paper", layer = "below",
+    x0 = wk$week[starts[i]] - 0.5, x1 = wk$week[ends[i]] + 0.5, y0 = 0, y1 = 1,
+    fillcolor = unname(month_fill[runs$values[i]] %||% "rgba(0,0,0,0.03)"), line = list(width = 0)))
+  annotations <- lapply(seq_along(runs$values), function(i) list(
+    x = mean(c(wk$week[starts[i]], wk$week[ends[i]])), y = 1, xref = "x", yref = "paper",
+    yanchor = "bottom", text = runs$values[i], showarrow = FALSE, font = list(size = 11, color = "#777")))
+
+  p <- plot_ly()
+
+  # ---- weather layer 1: GDD bars (underneath everything) ----
+  wd <- NULL
+  if (!is.null(wx)) {
+    lim <- range(wx$value[is.finite(wx$value)])
+    wd <- wx %>% filter(season == s, week %in% wk$week, is.finite(value)) %>% arrange(week)
+    if (bars && nrow(wd) > 0) {
+      p <- p %>% add_bars(x = wd$week, y = wd$value, yaxis = wx_ax, width = 0.55,
+                          marker = list(color = "rgba(232,163,61,0.30)", line = list(color = "rgba(168,112,26,0.55)", width = 1)),
+                          name = weather_short[[wx_var]], hoverinfo = "text", showlegend = !direct,
+                          text = paste0("Week ", wd$week, "<br>Mean daily GDD: ", round(wd$value, 1), " °C"),
+                          textposition = "none")
+    }
+  }
+
+  # ---- expression: context groups first, highlighted group last (on top) ----
+  ord <- c(setdiff(groups, hl), hl)
+  for (g in ord) {
+    gd <- sm[sm$group == g, ]
+    base <- if (g %in% names(pal)) unname(pal[g]) else "#333333"
+    focus <- is.null(hl) || g == hl
+    col <- if (focus) base else GREY_CTX
+    if (focus) {
+      p <- p %>% add_polygons(x = c(gd$week, rev(gd$week)),
+                              y = c(gd$mean_expr + gd$se_expr, rev(gd$mean_expr - gd$se_expr)),
+                              yaxis = ex_ax, fillcolor = col, opacity = 0.16, line = list(color = "transparent"),
+                              legendgroup = g, showlegend = FALSE, hoverinfo = "skip", name = pretty_name(g))
+    }
+    p <- p %>% add_trace(x = gd$week, y = gd$mean_expr, yaxis = ex_ax, type = "scatter", mode = "lines+markers",
+                         line = list(color = col, width = if (!is.null(hl) && g == hl) 3.5 else if (focus) 2.5 else 1.5),
+                         marker = list(color = col, size = if (focus) 6 else 4),
+                         name = pretty_name(g), legendgroup = g, showlegend = !direct, hoverinfo = "text",
+                         text = paste0("<b>", pretty_name(g), "</b><br>Week ", gd$week, "<br>Mean VST: ",
+                                       round(gd$mean_expr, 2), " ± ", round(gd$se_expr, 2), " (n = ", gd$n, ")"))
+  }
+
+  # Direct labels at the end of each line (instead of a legend)
+  x_max <- max(wk$week) + 0.6
+  if (direct && length(groups)) {
+    last <- sm %>% group_by(group) %>% filter(week == max(week)) %>% ungroup()
+    gap <- diff(y_rng) * 0.075
+    last$y_lab <- last$mean_expr
+    at_end <- last$week == max(last$week)
+    last$y_lab[at_end] <- spread_labels(last$mean_expr[at_end], gap)
+    for (i in seq_len(nrow(last))) {
+      g <- last$group[i]
+      focus <- is.null(hl) || g == hl
+      annotations[[length(annotations) + 1]] <- list(
+        x = last$week[i] + 0.18, y = last$y_lab[i], xref = "x", yref = ex_ax, xanchor = "left",
+        text = group_label(g, group_var), showarrow = FALSE,
+        font = list(size = 11, color = if (focus) (if (g %in% names(pal)) unname(pal[g]) else "#333") else "#aaaaaa"))
+    }
+    x_max <- max(wk$week) + 3
+  }
+
+  # ---- weather layer 2: temperature as a dashed line with triangles ----
+  wx_layout <- NULL
+  if (!is.null(wd) && nrow(wd) > 0) {
+    lab <- weather_axis[[wx_var]]
+    if (bars) {
+      wx_layout <- axis_style(title = list(text = lab, font = list(color = GDD_INK)), side = "right",
+                              range = c(0, lim[2] * 1.25), tickfont = list(color = GDD_INK, size = 11),
+                              linecolor = GDD_INK, tickcolor = GDD_INK)
+    } else {
+      pad <- diff(lim) * 0.08
+      p <- p %>% add_trace(x = wd$week, y = wd$value, yaxis = wx_ax, type = "scatter", mode = "lines+markers",
+                           line = list(color = TEMP_INK, width = 1.8, dash = "dash"),
+                           marker = list(symbol = "triangle-up", size = 13, color = temp_colour(wd$value, lim), opacity = 1,
+                                         line = list(color = TEMP_INK, width = 1.2)),
+                           name = weather_short[[wx_var]], showlegend = !direct, hoverinfo = "text",
+                           text = paste0("Week ", wd$week, "<br>", lab, ": ", round(wd$value, 1)))
+      wx_layout <- axis_style(title = list(text = paste("▲", lab), font = list(color = TEMP_INK)),
+                              overlaying = "y", side = "right", range = c(min(lim[1], -2) - pad, lim[2] + pad),
+                              tickfont = list(color = TEMP_INK, size = 11), linecolor = TEMP_INK, tickcolor = TEMP_INK)
+      shapes[[length(shapes) + 1]] <- list(type = "line", xref = "paper", x0 = 0, x1 = 1, yref = "y2", y0 = 0, y1 = 0,
+                                           line = list(color = "#9ecae1", dash = "dot", width = 1.5))
+      annotations[[length(annotations) + 1]] <- list(xref = "paper", x = 0.01, yref = "y2", y = 0, xanchor = "left",
+                                                     yanchor = "bottom", text = "0 °C", showarrow = FALSE,
+                                                     font = list(color = "#4a90c2", size = 10))
+      # direct label on the weather series, at its first point (left side is free of expression labels)
+      annotations[[length(annotations) + 1]] <- list(x = wd$week[1], y = wd$value[1], xref = "x", yref = "y2",
+                                                     yanchor = "top", yshift = -12, text = paste("▲", weather_short[[wx_var]]),
+                                                     showarrow = FALSE, font = list(color = TEMP_INK, size = 11))
+    }
+  }
+
+  ex_layout <- axis_style(title = list(text = "Expression (VST)"), range = y_rng)
+  lay <- list(
+    xaxis = axis_style(title = "", tickvals = wk$week, ticktext = ticktext, automargin = TRUE,
+                       range = c(min(wk$week) - 0.6, x_max)),
+    shapes = shapes, annotations = annotations, hovermode = "closest",
+    plot_bgcolor = "rgba(0,0,0,0)", paper_bgcolor = "rgba(0,0,0,0)",
+    legend = list(orientation = "h", yanchor = "top", y = -0.25, font = list(size = 11)),
+    margin = list(t = 28, r = if (is.null(wx_layout)) 10 else 60, b = 10, l = 55)
+  )
+  if (bars) {
+    lay$yaxis <- wx_layout
+    lay$yaxis2 <- modifyList(ex_layout, list(overlaying = "y", side = "left"))
+  } else {
+    lay$yaxis <- ex_layout
+    if (!is.null(wx_layout)) lay$yaxis2 <- wx_layout
+  }
+  do.call(layout, c(list(p), lay)) %>% plot_style(file_stub)
+}
+
+# ---- Photosynthetic-index axis (1 = photosynthetic -> 0 = senescent) ----
+ps_fits <- function(d, span = 0.5) {
+  bind_rows(lapply(split(d, d$group), function(gd) {
+    if (nrow(gd) < 8 || length(unique(gd$ps_index)) < 5) return(NULL)
+    fit <- tryCatch(suppressWarnings(loess(expression ~ ps_index, data = gd, span = span)), error = function(e) NULL)
+    if (is.null(fit)) return(NULL)
+    grid <- seq(min(gd$ps_index), max(gd$ps_index), length.out = 60)
+    pr <- tryCatch(suppressWarnings(predict(fit, data.frame(ps_index = grid), se = TRUE)), error = function(e) NULL)
+    if (is.null(pr)) return(NULL)
+    data.frame(group = gd$group[1], ps_index = grid, fit = pr$fit, se = pr$se.fit,
+               ci_low = pr$fit - 1.96 * pr$se.fit, ci_high = pr$fit + 1.96 * pr$se.fit, n_libraries = nrow(gd))
+  }))
+}
+
+ps_bands <- function() {
+  cols <- colorRamp(c("#4c9946", "#8cc052", "#c9d048", "#f6d654"))(seq(0, 1, length.out = 10))
+  lapply(1:10, function(i) list(
+    type = "rect", xref = "x", yref = "paper", layer = "below", x0 = 1 - (i - 1) / 10, x1 = 1 - i / 10,
+    y0 = 0, y1 = 1, line = list(width = 0),
+    fillcolor = sprintf("rgba(%d,%d,%d,0.07)", round(cols[i, 1]), round(cols[i, 2]), round(cols[i, 3]))))
+}
+
+make_ps_curve <- function(df, group_var, y_rng, highlight = "", file_stub = "ps_index") {
+  d <- df %>% filter(!is.na(ps_index)) %>% mutate(group = as.character(.data[[group_var]]))
+  pal <- palette_for(group_var)
+  groups <- sort(unique(d$group))
+  hl <- if (!is.null(highlight) && highlight %in% groups) highlight else NULL
+  direct <- length(groups) <= 8
+  fits <- ps_fits(d)
+  colour_of <- function(g) if (g %in% names(pal)) unname(pal[g]) else "#333333"
+  ord <- c(setdiff(groups, hl), hl)
+
+  p <- plot_ly()
+  for (g in ord) {   # libraries as faint context
+    pts <- d[d$group == g, ]
+    focus <- is.null(hl) || g == hl
+    p <- p %>% add_trace(type = "scatter", mode = "markers", x = pts$ps_index, y = pts$expression,
+                         marker = list(color = if (focus) colour_of(g) else GREY_CTX, size = 4,
+                                       opacity = if (focus) 0.3 else 0.15),
+                         legendgroup = g, showlegend = FALSE, hoverinfo = "text",
+                         text = paste0(pts$sample_id, "<br>", pretty_name(pts$accession), " · ", pts$season,
+                                       " · week ", pts$week, "<br>PS index: ", round(pts$ps_index, 2),
+                                       "<br>VST: ", round(pts$expression, 2)))
+  }
+  annotations <- list()
+  if (!is.null(fits) && nrow(fits)) {
+    for (g in intersect(ord, unique(fits$group))) {
+      f <- fits[fits$group == g, ]
+      focus <- is.null(hl) || g == hl
+      col <- if (focus) colour_of(g) else GREY_CTX
+      if (focus) p <- p %>% add_polygons(x = c(f$ps_index, rev(f$ps_index)), y = c(f$ci_high, rev(f$ci_low)),
+                                         fillcolor = col, opacity = 0.16, line = list(color = "transparent"),
+                                         legendgroup = g, showlegend = FALSE, hoverinfo = "skip")
+      p <- p %>% add_trace(type = "scatter", mode = "lines", x = f$ps_index, y = f$fit,
+                           line = list(color = col, width = if (!is.null(hl) && g == hl) 3.5 else if (focus) 2.8 else 1.5),
+                           name = pretty_name(g), legendgroup = g, showlegend = !direct, hoverinfo = "text",
+                           text = paste0("<b>", pretty_name(g), "</b><br>PS index: ", round(f$ps_index, 2),
+                                         "<br>Loess VST: ", round(f$fit, 2), " (n = ", f$n_libraries, ")"))
+    }
+    if (direct) {
+      ends <- fits %>% group_by(group) %>% filter(ps_index == min(ps_index)) %>% ungroup()
+      ends$y_lab <- spread_labels(ends$fit, diff(y_rng) * 0.075)
+      for (i in seq_len(nrow(ends))) {
+        g <- ends$group[i]
+        focus <- is.null(hl) || g == hl
+        annotations[[length(annotations) + 1]] <- list(
+          x = ends$ps_index[i] - 0.015, y = ends$y_lab[i], xref = "x", yref = "y", xanchor = "left",
+          text = group_label(g, group_var), showarrow = FALSE,
+          font = list(size = 11, color = if (focus) colour_of(g) else "#aaaaaa"))
+      }
+    }
+  }
+  layout(p,
+         xaxis = axis_style(title = list(text = "Photosynthetic index"), autorange = FALSE,
+                            range = c(1.03, if (direct) -0.34 else -0.03),
+                            tickvals = c(1, 0.75, 0.5, 0.25, 0),
+                            ticktext = c("1<br><span style='color:#999'>photosynthetic</span>", "0.75", "0.50", "0.25",
+                                         "0<br><span style='color:#999'>senescent</span>")),
+         yaxis = axis_style(title = list(text = "Expression (VST)"), range = y_rng),
+         shapes = ps_bands(), annotations = annotations, hovermode = "closest",
+         plot_bgcolor = "rgba(0,0,0,0)", paper_bgcolor = "rgba(0,0,0,0)",
+         legend = list(orientation = "h", yanchor = "top", y = -0.22, font = list(size = 11)),
+         margin = list(t = 20, r = 10, b = 10, l = 55)) %>%
+    plot_style(file_stub)
+}
+
+make_stripplot <- function(df, group_var, y_rng, violin = FALSE, highlight = "", file_stub = "distribution") {
+  pal <- palette_for(group_var)
+  df$group <- as.character(df[[group_var]])
+  df$block <- if (group_var == "season") "all" else df$season
+  slots <- df %>% group_by(block, group) %>%
+    summarise(med = median(expression), n = n(), .groups = "drop") %>% arrange(block, group)
+  blocks <- unique(slots$block)
+  slots$x <- seq_len(nrow(slots)) + (match(slots$block, blocks) - 1) * 0.8
+  hl <- if (!is.null(highlight) && nzchar(highlight) && highlight %in% slots$group) highlight else NULL
+  set.seed(42)
+  df <- df %>% left_join(slots %>% select(block, group, x), by = c("block", "group")) %>%
+    mutate(xj = x + runif(n(), -0.22, 0.22))
+
+  p <- plot_ly()
+  for (i in seq_len(nrow(slots))) {
+    sl <- slots[i, ]
+    pts <- df[df$block == sl$block & df$group == sl$group, ]
+    base <- if (sl$group %in% names(pal)) unname(pal[sl$group]) else "#555555"
+    focus <- is.null(hl) || sl$group == hl
+    col <- if (focus) base else GREY_CTX
+    if (violin && nrow(pts) > 2) {
+      p <- p %>% add_trace(type = "violin", x0 = sl$x, y = pts$expression, width = 0.85, points = FALSE,
+                           fillcolor = col, opacity = 0.18, line = list(width = 0), spanmode = "hard",
+                           hoverinfo = "skip", showlegend = FALSE, box = list(visible = FALSE),
+                           meanline = list(visible = FALSE))
+    }
+    p <- p %>%
+      add_trace(type = "scatter", mode = "markers", x = pts$xj, y = pts$expression,
+                marker = list(color = col, size = 5, opacity = if (focus) 0.5 else 0.35), showlegend = FALSE,
+                hoverinfo = "text",
+                text = paste0(pts$sample_id, "<br>", pretty_name(pts$accession), " · ", pts$season,
+                              " · week ", pts$week, "<br>VST: ", round(pts$expression, 2))) %>%
+      add_trace(type = "scatter", mode = "lines", x = c(sl$x - 0.3, sl$x + 0.3), y = c(sl$med, sl$med),
+                line = list(color = if (focus) "#222222" else "#9a9a9a", width = 3.5), showlegend = FALSE,
+                hoverinfo = "text", text = paste0("<b>", pretty_name(sl$group), "</b><br>Median VST: ",
+                                                  round(sl$med, 2), " (n = ", sl$n, ")"))
+  }
+
+  shapes <- list(); annotations <- list()
+  if (length(blocks) > 1 || blocks[1] != "all") for (b in blocks) {
+    xs <- slots$x[slots$block == b]
+    annotations[[length(annotations) + 1]] <- list(x = mean(xs), y = 1, xref = "x", yref = "paper", yanchor = "bottom",
+                                                   text = paste(b, "season"), showarrow = FALSE,
+                                                   font = list(size = 12, color = "#555"))
+    if (b != blocks[1]) shapes[[length(shapes) + 1]] <- list(type = "line", xref = "x", yref = "paper",
+                                                             x0 = min(xs) - 0.9, x1 = min(xs) - 0.9, y0 = 0, y1 = 1,
+                                                             line = list(color = "#dddddd", width = 1))
+  }
+  ticks <- sapply(slots$group, group_label, group_var = group_var)
+  if (nrow(slots) <= 4) ticks <- paste0(ticks, "<br><span style='color:#999;font-size:10px'>n = ", slots$n, "</span>")
+  p %>%
+    layout(xaxis = axis_style(title = "", tickvals = slots$x, ticktext = ticks, automargin = TRUE,
+                              tickangle = if (nrow(slots) > 4) -35 else 0, range = c(0.4, max(slots$x) + 0.6)),
+           yaxis = axis_style(title = list(text = "Expression (VST)"), range = y_rng),
+           shapes = shapes, annotations = annotations, hovermode = "closest",
+           plot_bgcolor = "rgba(0,0,0,0)", paper_bgcolor = "rgba(0,0,0,0)",
+           margin = list(t = 28, r = 10, b = 10, l = 55)) %>%
+    plot_style(file_stub)
+}
+
+# =====================================================================
+# 4. UI
+# =====================================================================
+sel_opts <- list(plugins = list("remove_button"), closeAfterSelect = TRUE,
+                 render = I("{item: function(item, escape) {
+                   var c = (window.atlasColors || {})[item.value] || '#7f8c8d';
+                   var h = c.replace('#', ''), r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+                   var bg = 'rgba(' + r + ',' + g + ',' + b + ',0.18)';
+                   return '<div class=\"pill-tag\" style=\"background:' + bg + ';border:1.5px solid ' + c + ' !important;color:#1a1a1a\">' + escape(item.label.split(' \u00b7 ')[0]) + '</div>';
+                 }}"))
+pill_radio <- function(...) div(class = "pill-group", radioButtons(..., inline = TRUE))
+img_box <- function(id) div(style = "text-align:center;", uiOutput(id))
+
+network_ui <- function(prefix, label, note) {
+  layout_sidebar(
+    sidebar = sidebar(
+      title = "Network controls",
+      textInput(paste0(prefix, "query"), "Search gene (orthogroup or any gene ID):", value = ""),
+      htmlOutput(paste0(prefix, "status")),
+      hr(),
+      selectInput(paste0(prefix, "module"), "Highlight module:", choices = c("All modules" = "All")),
+      hr(),
+      p("Interactive WGCNA TOM-UMAP. Hover over a node to see its properties; click it for details."),
+      span(note, style = "font-size: 0.8em; color: #666;")
+    ),
+    layout_columns(
+      col_widths = c(7, 5),
+      card(
+        card_header(paste("WGCNA", label, "module embedding")),
+        plotlyOutput(paste0(prefix, "plot"), height = "560px"),
+        card_footer(uiOutput(paste0(prefix, "key")))
+      ),
+      card(
+        card_header("Module details & interacting genes"),
+        div(
+          style = "max-height: 640px; overflow-y: auto;",
+          uiOutput(paste0(prefix, "details")),
+          tableOutput(paste0(prefix, "node_table")),
+          uiOutput(paste0(prefix, "inter_head")),
+          tableOutput(paste0(prefix, "interactions"))
+        )
+      )
+    )
+  )
+}
+
+# Small photo of senescing switchgrass (96 px JPEG) shown next to the title
+TITLE_ICON <- "data:image/jpeg;base64,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"
+
 ui <- page_navbar(
-  title = "Grass Senescence Atlas",
+  id = "main_nav",
+  title = tags$span(class = "brand",
+                    tags$img(class = "brand-icon", alt = "", src = TITLE_ICON),
+                    "Atlas of Grass Senescence Dashboard"),
+  window_title = "Atlas of Grass Senescence Dashboard",
   theme = bs_theme(version = 5, bootswatch = "flatly"),
-  header = tags$script(HTML("
-    $(document).on('shiny:connected', function() {
-      setTimeout(function() {
-        Shiny.setInputValue('gen_plot', 1, {priority: 'event'});
-      }, 500);
-    });
+  header = tagList(
+    tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
+    tags$link(rel = "preconnect", href = "https://fonts.gstatic.com", crossorigin = NA),
+    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"),
+    tags$style(HTML("
+    :root { --bs-body-font-family: 'Inter', system-ui, sans-serif; }
+    body, .navbar, .card, .sidebar, .selectize-input, .selectize-dropdown, .btn, input, select, textarea, table,
+    .tooltip, .shiny-notification, .form-control { font-family: 'Inter', system-ui, sans-serif !important; }
+    /* banner: off-white (#F9FAF4) with darker orange (#E07B39) content */
+    .bslib-page-navbar > nav.navbar, nav.navbar.navbar-inverse, nav.navbar.navbar-default {
+      --bslib-navbar-inverse-bg: #F9FAF4; --bslib-navbar-default-bg: #F9FAF4;
+      background-color: #F9FAF4 !important; border-bottom: 2px solid #B9D4D3 !important; }
+    nav.navbar .navbar-brand, nav.navbar .nav-link, nav.navbar .navbar-nav .nav-item > a {
+      font-family: 'Inter', system-ui, sans-serif !important; color: #E07B39 !important;
+      font-weight: 600; text-decoration: none; }
+    nav.navbar .navbar-brand { font-weight: 700; }
+    nav.navbar .nav-link:hover, nav.navbar .navbar-nav .nav-item > a:hover { color: #c4642a !important; }
+    nav.navbar .nav-link.active { color: #E07B39 !important; box-shadow: inset 0 -3px 0 #E07B39; }
+    nav.navbar .navbar-toggler { border-color: #E07B39; }
+    .brand { display: inline-flex; align-items: center; gap: 8px; }
+    .brand-icon { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid #B9D4D3; }
+    /* tabs as outlined (contour) buttons; the current tab gets a light tint */
+    nav.navbar .navbar-nav .nav-item > a.nav-link:is([data-value='Dataset overview'], [data-value='Expression Explorer'], [data-value='Leaf Network'], [data-value='Underground Network']) {
+      border-radius: 999px; padding: .2rem .8rem !important; margin: 2px 3px; font-size: .9rem;
+      background: transparent; border: 1.5px solid; box-shadow: none !important; white-space: nowrap;
+      transition: background .15s; }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Dataset overview']    { border-color: #E07B39; color: #E07B39 !important; }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Expression Explorer'] { border-color: #F17A7E; color: #d4545a !important; }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Leaf Network']        { border-color: #93C19A; color: #4f8a58 !important; }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Underground Network'] { border-color: #4A6163; color: #4A6163 !important; }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Dataset overview']:is(.active, :hover)    { background: rgba(224,123,57,.12); }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Expression Explorer']:is(.active, :hover) { background: rgba(241,122,126,.14); }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Leaf Network']:is(.active, :hover)        { background: rgba(147,193,154,.20); }
+    nav.navbar .navbar-nav .nav-item > a.nav-link[data-value='Underground Network']:is(.active, :hover) { background: rgba(74,97,99,.10); }
+    nav.navbar .navbar-nav { align-items: center; flex-wrap: wrap; }
+    nav.navbar .navbar-nav .nav-item > a:not(.nav-link) { white-space: nowrap; font-size: .9rem; }
+    /* left sidebars: off-white background, slate text */
+    .bslib-sidebar-layout { --_sidebar-bg: #F9FAF4; --_sidebar-fg: #4A6163; }
+    .bslib-sidebar-layout > .sidebar { background-color: #F9FAF4 !important; color: #4A6163 !important;
+      border-right: 2px solid #B9D4D3 !important; }
+    /* cards: off-white headers with slate text, pale-teal borders */
+    .card { --bs-card-border-color: #B9D4D3; border: 1.5px solid #B9D4D3 !important; }
+    .card > .card-header { background-color: #F9FAF4 !important; color: #4A6163 !important;
+      border-bottom: 1px solid var(--bs-card-border-color) !important; }
+    .bslib-sidebar-layout > .sidebar :is(p, b, strong, h5, h6, span, label, .control-label, .sidebar-title, .wx-note, .sub-note) {
+      color: #4A6163; }
+    .bslib-sidebar-layout > .collapse-toggle { color: #4A6163; }
   ")),
-  
+    div(style = "display:none;", plot_ly(x = 1, y = 1, type = "scatter", mode = "markers")),
+    tags$script(HTML(paste0("window.atlasColors = ", jsonlite::toJSON(
+      as.list(c(species_palette, accession_palette, tissue_type_palette)), auto_unbox = TRUE), ";"))),
+    tags$style(HTML("
+    .selectize-dropdown-content .optgroup-header { font-weight: 600; font-style: italic; color: #2c3e50; }
+    .wx-note { font-size: 0.8em; color: #666; }
+    .module-key { display: flex; flex-wrap: wrap; gap: 6px; }
+    .module-key span { cursor: pointer; padding: 2px 8px; border-radius: 10px; color: #fff;
+                       font-size: 0.78em; text-shadow: 0 0 2px rgba(0,0,0,.6); }
+    /* pill radios */
+    .pill-group .shiny-options-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+    .pill-group .shiny-options-group > div { margin: 0 !important; padding: 0 !important; }
+    .pill-group input[type=radio] { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+    .pill-group .shiny-options-group label { display: inline-flex !important; align-items: center; padding: 3px 12px !important;
+      border-radius: 999px; border: 1px solid #c8d1da; background: #fff; color: #2c3e50; font-size: 0.84em;
+      cursor: pointer; margin: 0 !important; transition: background .15s, border-color .15s; }
+    .pill-group .shiny-options-group label:hover { border-color: #18bc9c; }
+    .pill-group .shiny-options-group label:has(input:checked),
+    .pill-group input:checked + label { background: #e3ecf3; border: 1.5px solid #2c3e50; color: #111; font-weight: 600; }
+    /* pill tags inside multi-selects */
+    .selectize-input { border-radius: 12px !important; }
+    .selectize-control.multi .selectize-input > div.pill-tag { border-radius: 999px !important;
+      padding: 1px 4px 1px 10px !important; margin: 2px 4px 2px 0 !important; font-size: 0.8em; box-shadow: none !important; }
+    .selectize-control.plugin-remove_button .pill-tag .remove { position: static !important; display: inline-block;
+      border-left: 0 !important; color: inherit !important; opacity: .8; padding: 0 5px !important; margin-left: 2px; }
+    .selectize-control.plugin-remove_button .pill-tag { padding-right: 4px !important; }
+    /* pill buttons */
+    .btn-pill { border-radius: 999px !important; padding: 3px 14px !important; font-size: 0.82em !important; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sub-note { font-size: 0.82em; color: #777; margin: -4px 0 6px; }
+    .bslib-sidebar-layout > .sidebar > .sidebar-content { gap: 0.35rem !important; padding-top: 0.6rem !important; }
+    .sidebar .shiny-input-container { margin-bottom: 0.15rem !important; }
+    .sidebar .control-label { margin-bottom: 0.15rem !important; font-size: 0.9em; font-weight: 600; }
+    .sidebar hr { margin: 0.3rem 0 !important; }
+    .sidebar .form-switch { margin-bottom: 0 !important; }
+    .sidebar .sidebar-title { font-size: 1.05rem; margin-bottom: 0.2rem; }
+    .expr-title h5 { margin-bottom: 0; } .expr-title p { color: #777; font-size: 0.88em; margin: 2px 0 8px; }
+  "))),
+
   # === TAB 0: WELCOME ===
   nav_panel(
-    title = "The Grass Senescence Atlas",
+    title = "Dataset overview",
     layout_sidebar(
       sidebar = sidebar(
         title = "About This Dashboard",
-
         p("Interactively access the transcriptomic data featured in the paper:"),
-        tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks limit nitrogen recycling in annuals"),
+        tags$b("A transcriptomic atlas of grass senescence reveals divergent underground sink networks promote nitrogen recycling in perennials"),
         br(),
-        tags$a("Link to the article", href = "https://www.biorxiv.org/content/10.64898/2026.05.05.723041v1", target = "_blank"),
+        p(tags$i("The Plant Cell"), " (2026). ",
+          tags$a("doi:10.1093/plcell/koag345", href = "https://doi.org/10.1093/plcell/koag345", target = "_blank")),
         hr(),
         h5("How to Use"),
         tags$b("1. Expression Explorer"),
-        p("Filter and visualize gene expression profiles across different species, tissues, and timepoints. Search using Zea mays B73 v5 annotation IDs or Orthogroup IDs."),
+        p("Search a Zea mays B73 v5 gene or orthogroup ID, then pick the season, tissues, species and accessions to plot. Plots update as you change the filters, and you can overlay field temperature on the time course or download the plotted data."),
         tags$b("2. Leaf Network"),
-        p("Interactive WGCNA TOM-UMAP embedding of the leaf co-expression network. Search for genes, view their top connections (highlighted in red), and examine module eigengene patterns."),
+        p("Interactive WGCNA TOM-UMAP embedding of the leaf co-expression network. Search for genes, view their top connections (highlighted in red), examine module eigengene patterns, and send a gene to the Expression Explorer."),
         tags$b("3. Underground Network"),
-        p("Similar to the Leaf Network, but focused on root and stem tissue co-expression modules.")
+        p("The same for the root and stem co-expression modules.")
       ),
       card(
         id = "methodology-card",
@@ -294,718 +816,531 @@ ui <- page_navbar(
             p("This dataset encompasses:"),
             tags$ul(
               tags$li(tags$b("14 grass species"), " (", tags$b("31 accessions"), ")"),
-              tags$li(tags$b("2 seasons:"), " pot-in-pot field and standard field"),
+              tags$li(tags$b("2 seasons:"), " pot-in-pot field (2023, 14 species, leaves and roots) and standard field (2024, 7 species, leaves, roots, rhizomes and stalks)"),
               tags$li(tags$b("3 tissues:"), " leaves, roots, stems"),
               tags$li(tags$b("Life history:"), " perennial and annual")
             ),
-            tags$img(src = welcome_b64[["species_tree"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            img_box("img_species_tree"),
             hr(),
             h6("Expression UMAP"),
-            tags$img(src = welcome_b64[["umap_atlas"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+            img_box("img_umap_atlas")
           ),
           card(
             card_header("Methodology"),
-            tags$img(src = welcome_b64[["methodology_summary"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;"),
+            img_box("img_methodology"),
             hr(),
             h6("Environmental Conditions"),
             p("Daily Growing Degree Days (GDDs; °C) plotted against Julian days for the 2023 and 2024 seasons. Yellow triangles indicate specific sampling events. The variation in GDDs reflects the range of heat units experienced by the field-grown plants, capturing the environmental progression from mid-summer through late-season senescence."),
-            tags$img(src = welcome_b64[["gdd_plot"]], style = "width: 70%; max-width: 420px; margin: auto; display: block;")
+            img_box("img_gdd")
           )
         )
       )
     )
   ),
-  
+
   # === TAB 1: EXPRESSION EXPLORER ===
   nav_panel(
     title = "Expression Explorer",
     layout_sidebar(
       sidebar = sidebar(
-        title = "Filters & Settings",
-        textInput("gene_id", "Gene or Orthogroup ID:", value = "Zm00001eb319560"),
+        width = 330,
+        title = "Gene & samples",
+        selectizeInput("gene_id", "Gene or orthogroup ID:", choices = NULL,
+                       options = list(create = TRUE, maxOptions = 50,
+                                      placeholder = "e.g. Zm00001eb319560 or OG0007133")),
         uiOutput("og_id_display"),
-        actionButton("gen_plot", "Generate Time-Course Plot", 
-                     class = "btn-primary w-100", style = "margin-top:6px; margin-bottom:4px;"),
+        pill_radio("season", "Season", choices = c("Both" = "both", "2023" = "2023", "2024" = "2024"),
+                   selected = "both"),
+        selectizeInput("filter_tissue", "Tissue", choices = NULL, multiple = TRUE, options = sel_opts),
+        selectizeInput("filter_species", "Species", choices = NULL, multiple = TRUE, options = sel_opts),
+        selectizeInput("filter_accession", "Accessions", choices = NULL, multiple = TRUE, options = sel_opts),
+        div(class = "pill-row", style = "margin-top:-8px;",
+            actionButton("acc_all", "All accessions", class = "btn-pill btn-outline-secondary"),
+            actionButton("acc_none", "Clear", class = "btn-pill btn-outline-secondary")),
+        uiOutput("missing_note"),
         hr(),
-        selectInput("group_var", "Grouping Variable:", 
-                    choices = c("accession", "species", "tissue", "life_history"),
-                    selected = "species"),
+        pill_radio("x_axis", "Time axis",
+                   choices = c("Sampling week" = "week", "Photosynthetic index" = "ps"), selected = "week"),
+        pill_radio("group_var", "Colour by",
+                   choices = c("Species" = "species", "Accession" = "accession", "Tissue" = "tissue_type",
+                               "Organ" = "tissue", "Life history" = "life_history", "Season" = "season"),
+                   selected = "species"),
+        selectInput("highlight", "Highlight one group", choices = c("None (show all in colour)" = "none"), selected = "none"),
+        div(class = "sub-note", "Other groups turn grey, so one story stands out."),
+        input_switch("violin", "Show distribution shape (violin)", value = TRUE),
         hr(),
-        h6("Subsetting:"),
-        selectizeInput("filter_tissue", "Tissue (optional):", 
-                       choices = unique(metadata$tissue), selected = "leaf", multiple = TRUE),
-        selectizeInput("filter_species", "Species (optional):", 
-                       choices = unique(metadata$species), 
-                       selected = c("Andropogon_gerardii", "Zea_mays", "Tripsacum_dactyloides", 
-                                    "Sorghum_bicolor", "Sorghastrum_nutans", "Zea_diploperennis"),
-                       multiple = TRUE),
-        selectizeInput("filter_accession", "Accession (optional):", choices = NULL, multiple = TRUE),
+        conditionalPanel(
+          "input.x_axis == 'week'",
+          input_switch("wx_on", "Overlay field weather on the time course", value = FALSE),
+          conditionalPanel(
+            "input.wx_on",
+            pill_radio("wx_var", NULL, choices = weather_vars, selected = "min_air_C"),
+            pill_radio("wx_window", "Summarize by",
+                       choices = c("Calendar week (as in the paper)" = "calendar", "7 days before sampling" = "pre"),
+                       selected = "calendar"),
+            span(class = "wx-note", "NEWA station at the field site. GDD: base 10 °C, cap 30 °C; bars show the weekly mean of daily GDD.")
+          )
+        ),
+        conditionalPanel("input.x_axis == 'ps'",
+                         span(class = "wx-note", "Weather overlays are available on the sampling-week axis.")),
         hr(),
-        span("Note: Using professional native Plotly ribbons.", style = "font-size: 0.8em; color: #666;")
+        tags$b("Export", style = "font-size:0.9em;"),
+        div(class = "pill-row", style = "margin-top:4px;",
+            downloadButton("dl_samples", "Samples (CSV)", class = "btn-pill btn-outline-primary"),
+            downloadButton("dl_summary", "Time course (CSV)", class = "btn-pill btn-outline-primary")),
+        div(class = "sub-note", style = "margin-top:6px;", "Plots: use the camera icon on each plot to save an SVG.")
       ),
-      layout_column_wrap(
-        width = 1/2,
+      div(class = "expr-title", uiOutput("expr_title")),
+      layout_columns(
+        col_widths = c(5, 7),
         card(
-          card_header("Expression Boxplot"),
-          plotlyOutput("box_plot", height = "500px")
+          card_header("Distribution across all sampled weeks"),
+          plotlyOutput("box_plot", height = "560px"),
+          card_footer("Each dot is one library; the black bar is the group median.")
         ),
         card(
-          card_header("Time-Course (Mean ± SE)"),
-          plotlyOutput("ribbon_plot", height = "500px"),
-          card_footer("Shaded ribbon: Mean ± SE. X-axis: Week | Julian Day.")
+          card_header(textOutput("tc_header", inline = TRUE)),
+          uiOutput("tc_panels"),
+          card_footer(textOutput("tc_footer", inline = TRUE))
         )
       )
     )
   ),
-  
-  # === TAB 2: LEAF NETWORK EXPLORER ===
-  nav_panel(
-    title = "Leaf Network",
-    layout_sidebar(
-      sidebar = sidebar(
-        title = "Network Controls",
-        textInput("net_query", "Search Gene (OG / Zea mays):", value = ""),
-        htmlOutput("net_status_msg"),
-        hr(),
-        selectInput("net_module", "Highlight Module:", 
-                    choices = c("All Modules", sort(unique(umap_df$module_label))),
-                    selected = "All Modules"),
-        hr(),
-        p("Interactive WGCNA TOM-UMAP."),
-        p("Hover over any node to see its properties."),
-        hr(),
-        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM > 0.05) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
-      ),
-      layout_column_wrap(
-        width = 1/2,
-        card(
-          card_header("WGCNA Leaf Module Embedding"),
-          plotlyOutput("network_plot", height = "600px")
-        ),
-        card(
-          card_header("Module Details & Interacting Genes"),
-          div(
-            style = "max-height: 600px; overflow-y: auto;",
-            uiOutput("module_plot_ui"),
-            h6("Selected Node Properties:"),
-            tableOutput("node_table"),
-            hr(),
-            h6("Top Interactions:"),
-            tableOutput("interactions_table")
-          )
-        )
-      )
-    )
-  ),
-  
-  # === TAB 3: UNDERGROUND NETWORK EXPLORER ===
-  nav_panel(
-    title = "Underground Network",
-    layout_sidebar(
-      sidebar = sidebar(
-        title = "Network Controls",
-        textInput("und_net_query", "Search Gene (OG / Zea mays):", value = ""),
-        htmlOutput("und_net_status_msg"),
-        hr(),
-        selectInput("und_net_module", "Highlight Module:", 
-                    choices = c("All Modules", sort(unique(und_umap_df$module_label))),
-                    selected = "All Modules"),
-        hr(),
-        p("Interactive WGCNA TOM-UMAP."),
-        p("Hover over any node to see its properties."),
-        hr(),
-        span("Note: Showing only the strongest co-expression interactions (Top 5 edges per node, TOM > 0.1) to highlight core network topology.", style = "font-size: 0.8em; color: #666;")
-      ),
-      layout_column_wrap(
-        width = 1/2,
-        card(
-          card_header("WGCNA Underground Module Embedding"),
-          plotlyOutput("und_network_plot", height = "600px")
-        ),
-        card(
-          card_header("Module Details & Interacting Genes"),
-          div(
-            style = "max-height: 600px; overflow-y: auto;",
-            uiOutput("und_module_plot_ui"),
-            h6("Selected Node Properties:"),
-            tableOutput("und_node_table"),
-            hr(),
-            h6("Top Interactions:"),
-            tableOutput("und_interactions_table")
-          )
-        )
-      )
-    )
-  )
+
+  # === TAB 2 & 3: NETWORKS ===
+  nav_panel(title = "Leaf Network",
+            network_ui("leaf_", "leaf",
+                       "Edges: strongest co-expression links only (top 3 per node, TOM > 0.05).")),
+  nav_panel(title = "Underground Network",
+            network_ui("und_", "underground",
+                       "Edges: strongest co-expression links only (top 3 per node, TOM > 0.1).")),
+
+  nav_spacer(),
+  nav_item(tags$a(icon("file-lines"), "Paper", href = "https://doi.org/10.1093/plcell/koag345", target = "_blank")),
+  nav_item(tags$a(icon("github"), "Code", href = "https://github.com/jonathan-or/grass-senescence-atlas", target = "_blank"))
 )
 
-# --- 5. SERVER ---
-server <- function(input, output, session) {
-  
-  # --- Expression Explorer Server Logic ---
-  observeEvent(input$filter_species, {
-    available_accs <- metadata %>% 
-      filter(species %in% input$filter_species | length(input$filter_species) == 0) %>% 
-      pull(accession) %>% unique() %>% sort()
-    
-    defaults <- c()
-    if (length(input$filter_species) > 0) {
-      for (s in input$filter_species) {
-        accs_for_s <- metadata %>% filter(species == s) %>% pull(accession) %>% unique()
-        if (length(accs_for_s) == 1) defaults <- c(defaults, accs_for_s)
-        else if (s == "Tripsacum_dactyloides") defaults <- c(defaults, "Td_Pete")
-        else if (s == "Zea_mays") { if ("Zm_lh287Xlh244" %in% accs_for_s) defaults <- c(defaults, "Zm_lh287Xlh244") }
-        else defaults <- c(defaults, accs_for_s)
-      }
-    }
-    updateSelectizeInput(session, "filter_accession", choices = available_accs, selected = defaults, server = TRUE)
-  }, ignoreNULL = FALSE)
+# =====================================================================
+# 5. SERVER
+# =====================================================================
+network_server <- function(input, output, session, prefix, net, root, go_expr, expr_tissues) {
+  id <- function(x) paste0(prefix, x)
+  src <- paste0(prefix, "view")
+  umap <- net$umap
 
-  target_og <- reactive({
-    query_id <- str_trim(input$gene_id)
-    if (query_id == "") return(NULL)
-    if (str_starts(query_id, "OG")) {
-      if (query_id %in% rownames(vst_counts)) return(query_id)
+  updateSelectInput(session, id("module"),
+                    choices = c("All modules" = "All", setNames(net$modules$module_label, net$modules$module_label)))
+
+  query_og <- reactive({
+    q <- str_trim(input[[id("query")]] %||% "")
+    if (q == "") return(NULL)
+    if (q %in% umap$gene) return(q)
+    og <- unname(DATA$gene2og[q])
+    if (length(og) && !is.na(og)) og else q
+  }) %>% debounce(400)
+
+  clicked <- reactiveVal(NULL)
+  observeEvent(event_data("plotly_click", source = src), {
+    clicked(event_data("plotly_click", source = src)$key)
+    updateTextInput(session, id("query"), value = "")
+  })
+  observeEvent(input[[id("key_pick")]], {
+    clicked(NULL)
+    updateTextInput(session, id("query"), value = "")
+    updateSelectInput(session, id("module"), selected = input[[id("key_pick")]])
+  })
+
+  active_gene <- reactive({
+    q <- query_og()
+    if (!is.null(q) && str_trim(input[[id("query")]] %||% "") != "") q else clicked()
+  })
+
+  output[[id("status")]] <- renderUI({
+    q <- query_og()
+    if (is.null(q) || str_trim(input[[id("query")]] %||% "") == "") return(NULL)
+    if (q %in% umap$gene) {
+      tags$div(paste("Highlighted:", q), style = "color: #2a7a2a; font-weight: bold; margin-top: 8px;")
     } else {
-      match_row <- gene_og_map %>% filter(GeneID == query_id)
-      if (nrow(match_row) > 0) return(match_row$Orthogroup[1])
+      tags$div("Not found in this network", style = "color: #c9302c; font-weight: bold; margin-top: 8px;")
     }
-    return(NULL)
   })
-  
-  output$og_id_display <- renderUI({
-    og <- target_og()
-    query <- str_trim(input$gene_id)
-    if (is.null(og)) {
-      span("ID not found or not in atlas", style = "color: #e44; font-size: 0.85em; display: block; margin-bottom: 10px;")
-    } else if (str_starts(query, "OG")) {
-      span(paste0(og, " \u2713"), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+
+  output[[id("key")]] <- renderUI({
+    div(class = "module-key",
+        lapply(seq_len(nrow(net$modules)), function(i) {
+          m <- net$modules[i, ]
+          light <- sum(col2rgb(m$color) * c(0.299, 0.587, 0.114)) > 150
+          tags$span(style = paste0("background:", m$color, ";", if (light) " color:#222; text-shadow:none;" else ""),
+                    onclick = sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'})", id("key_pick"), m$module_label),
+                    title = "Highlight this module", m$module_label)
+        }))
+  })
+
+  output[[id("plot")]] <- renderPlotly({
+    plot_data <- umap
+    edge_data <- net$edges
+    g <- active_gene()
+    mod <- input[[id("module")]] %||% "All"
+    found <- !is.null(g) && g %in% plot_data$gene
+
+    if (!is.null(g) && !found) {
+      plot_data <- plot_data %>% mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
+      edge_data$hi <- FALSE
+    } else if (found) {
+      plot_data <- plot_data %>%
+        mutate(display_color = ifelse(gene == g, color, "lightgrey"),
+               display_opacity = ifelse(gene == g, 1, 0.15),
+               display_size = ifelse(gene == g, 20, pmax(kME * 10, 3))) %>%
+        arrange(gene == g)
+      edge_data$hi <- edge_data$from == g | edge_data$to == g
+    } else if (mod != "All") {
+      plot_data <- plot_data %>%
+        mutate(display_color = ifelse(module_label == mod, color, "lightgrey"),
+               display_opacity = ifelse(module_label == mod, 0.9, 0.15),
+               display_size = pmax(kME * 15, 3))
+      edge_data$hi <- FALSE
     } else {
-      span(paste("Mapped Orthogroup:", og), style = "color: #282; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 10px;")
+      plot_data <- plot_data %>% mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+      edge_data$hi <- FALSE
     }
+
+    p <- plot_ly(source = src)
+    bg <- edge_data[!edge_data$hi, ]
+    hi <- edge_data[edge_data$hi, ]
+    if (nrow(bg) > 0) p <- p %>% add_segments(data = bg, x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+                                               line = list(color = "lightgrey", width = 0.5), opacity = 0.08,
+                                               hoverinfo = "none", showlegend = FALSE)
+    if (nrow(hi) > 0) p <- p %>% add_segments(data = hi, x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
+                                               line = list(color = "red", width = 2), opacity = 0.85,
+                                               hoverinfo = "none", showlegend = FALSE)
+    p %>%
+      add_trace(data = plot_data, x = ~UMAP1, y = ~UMAP2, type = "scatter", mode = "markers",
+                marker = list(color = ~display_color, size = ~display_size, opacity = ~display_opacity,
+                              line = list(color = "white", width = 0.5)),
+                text = ~paste0("OG: ", gene, "<br>Zea mays: ", Zea_mays_genes, "<br>Module: ", module_label,
+                               "<br>kME: ", round(kME, 3)),
+                hoverinfo = "text", key = ~gene, showlegend = FALSE) %>%
+      layout(xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             hovermode = "closest", margin = list(l = 5, r = 5, t = 5, b = 5),
+             font = list(family = MONO, size = 11), hoverlabel = list(font = list(family = MONO, size = 11))) %>%
+      event_register("plotly_click")
   })
 
-  # gene_data: triggered by button click OR runs once at startup (ignoreNULL = FALSE)
-  gene_data <- eventReactive(input$gen_plot, {
-    query_id <- str_trim(input$gene_id)
-    # Fast lookup: if OG ID, use directly; otherwise use gene_og_map
-    tog <- if (str_starts(query_id, "OG") && query_id %in% rownames(vst_counts)) {
-      query_id
-    } else if (query_id == "Zm00001eb319560" || query_id == "") {
-      .default_og  # use pre-computed value, avoids slow lookup at startup
-    } else {
-      m <- gene_og_map$Orthogroup[gene_og_map$GeneID == query_id]
-      if (length(m) > 0) m[1] else NULL
+  output[[id("details")]] <- renderUI({
+    g <- active_gene()
+    if (is.null(g) || !(g %in% umap$gene)) {
+      return(p("Click a node or search for a gene to see its module, annotation and top co-expression partners.",
+               style = "color: #777;"))
     }
-    req(tog)
-    
-    expr_vals <- vst_counts[tog, ]
-    df <- data.frame(sample_id = names(expr_vals), expression = as.numeric(expr_vals)) %>%
-      inner_join(metadata, by = "sample_id")
-    
-    if (length(input$filter_tissue) > 0) df <- df %>% filter(tissue %in% input$filter_tissue)
-    if (length(input$filter_species) > 0) df <- df %>% filter(species %in% input$filter_species)
-    if (length(input$filter_accession) > 0) df <- df %>% filter(accession %in% input$filter_accession)
-    df
-  }, ignoreNULL = FALSE)
-
-  y_range <- reactive({
-    df <- gene_data(); req(nrow(df) > 0)
-    range(df$expression, na.rm = TRUE)
-  })
-
-  active_palette <- reactive({
-    gv <- input$group_var
-    if (gv == "life_history") life_history_palette
-    else if (gv == "tissue") tissue_type_palette
-    else if (gv == "species") species_palette
-    else if (gv == "accession") accession_palette_named
-    else c(accession_palette_named, species_palette, tissue_type_palette, life_history_palette)
-  })
-
-  output$ribbon_plot <- renderPlotly({
-    df <- gene_data(); req(nrow(df) > 0)
-    
-    summary_df <- df %>%
-      distinct(sample_id, .keep_all = TRUE) %>%
-      group_by(week, group = as.character(.data[[input$group_var]])) %>%
-      summarise(mean_expr = mean(expression, na.rm = TRUE), se_expr = sd(expression, na.rm = TRUE) / sqrt(n()), .groups = "drop") %>%
-      left_join(week_lookup, by = "week") %>%
-      arrange(group, week) %>% filter(!is.na(mean_expr))
-    
-    yr <- y_range(); y_min <- yr[1]; y_max <- yr[2]; buffer <- (y_max - y_min) * 0.1
-    y_lim_top <- y_max + buffer; tile_height <- (y_max - y_min) * 0.15; y_plot_top <- y_lim_top + tile_height
-    
-    p <- plot_ly()
-    groups <- unique(summary_df$group)
-    for (g in groups) {
-      g_data <- summary_df %>% filter(group == g)
-      color_hex <- if (g %in% names(active_palette())) active_palette()[g] else "#333333"
-      
-      p <- p %>% add_polygons(
-        x = c(g_data$week, rev(g_data$week)), y = c(g_data$mean_expr + g_data$se_expr, rev(g_data$mean_expr - g_data$se_expr)),
-        fillcolor = color_hex, opacity = 0.2, line = list(color = "transparent"), name = g, showlegend = FALSE, connectgaps = TRUE
-      ) %>% add_trace(
-        x = g_data$week, y = g_data$mean_expr, type = "scatter", mode = "lines+markers",
-        line = list(color = color_hex, width = 3), marker = list(color = color_hex, size = 8), name = g,
-        hovertext = paste0("Group: ", g, "<br>Week: ", g_data$week, "<br>Mean VST: ", round(g_data$mean_expr, 2)),
-        hoverinfo = "text", connectgaps = TRUE
-      )
-    }
-    
-    shapes <- list(); annotations <- list(); month_colors <- c("July"="#228B22", "Aug"="#7CFC00", "Sept"="#ADFF2F", "Oct"="#FFFF00")
-    for(i in 1:nrow(month_unique)) {
-      m <- month_unique[i,]
-      shapes[[i]] <- list(type = "rect", fillcolor = month_colors[m$month], line = list(color = "black", width = 1),
-                          opacity = 0.4, x0 = m$start - 0.5, x1 = m$end + 0.5, y0 = y_lim_top, y1 = y_plot_top, xref = "x", yref = "y")
-      annotations[[i]] <- list(x = m$mid, y = y_lim_top + (tile_height / 2), text = m$month, showarrow = FALSE, font = list(size = 12, color = "black", weight = "bold"))
-    }
-    
-    p %>% layout(
-      xaxis = list(title = "Week | Julian Day", tickvals = 1:14, ticktext = paste0("w", week_lookup$week, "|", week_lookup$julian), tickangle = 45),
-      yaxis = list(title = "expression (normalized VST-counts)", range = c(y_min - buffer, y_plot_top)),
-      shapes = shapes, annotations = annotations, showlegend = FALSE,
-      margin = list(t = 50)
+    mod <- umap$module_label[umap$gene == g][1]
+    tagList(
+      div(class = "d-flex justify-content-between align-items-center mb-2",
+          h6(paste0("Module eigengene pattern: ", mod), class = "mb-0"),
+          actionButton(id("to_expr"), "Plot in Expression Explorer", class = "btn-sm btn-primary")),
+      tags$img(src = paste0(root, net$plot_dir, "/module_", mod, ".png"),
+               alt = paste("No plot available for module", mod),
+               style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"),
+      hr(),
+      h6("Selected node:")
     )
+  })
+
+  observeEvent(input[[id("to_expr")]], {
+    g <- active_gene()
+    if (!is.null(g)) go_expr(g, expr_tissues)
+  })
+
+  output[[id("node_table")]] <- renderTable({
+    g <- active_gene()
+    req(!is.null(g), g %in% umap$gene)
+    u <- umap[umap$gene == g, ][1, ]
+    zm <- strsplit(u$Zea_mays_genes, ", ")[[1]]
+    d <- net$desc[match(zm, net$desc$gene_id_Zm), ]
+    out <- data.frame(
+      Orthogroup = g,
+      "Zea mays gene" = ifelse(zm == "None", "None",
+                               sprintf('<a href="https://www.maizegdb.org/gene_center/gene/%s" target="_blank">%s</a>', zm, zm)),
+      Module = u$module_label,
+      "Sink/source" = ifelse(is.na(d$sink_source), "—", d$sink_source),
+      "kME (hub score)" = round(u$kME, 3),
+      Description = ifelse(is.na(d$Description) | d$Description == "", "No description available", d$Description),
+      check.names = FALSE, stringsAsFactors = FALSE
+    )
+    if (all(is.na(net$desc$sink_source))) out[["Sink/source"]] <- NULL
+    out
+  }, digits = 3, sanitize.text.function = function(x) x)
+
+  partners <- reactive({
+    g <- active_gene()
+    req(!is.null(g), g %in% umap$gene)
+    net$edges %>%
+      filter(from == g | to == g) %>%
+      mutate(partner = ifelse(from == g, to, from)) %>%
+      select(partner, weight) %>%
+      arrange(desc(weight)) %>%
+      left_join(net$og_desc, by = c("partner" = "OG")) %>%
+      mutate(Description = ifelse(is.na(Description), "No description available", Description),
+             Zea_mays_genes = ifelse(is.na(Zea_mays_genes), "None", Zea_mays_genes),
+             weight = round(weight, 4)) %>%
+      transmute("Partner OG" = partner, "TOM weight" = weight, "Zea mays gene" = Zea_mays_genes, Description)
+  })
+  output[[id("inter_head")]] <- renderUI({
+    n <- nrow(partners())
+    tagList(hr(), h6(if (n) "Top interactions:" else "No interactions above the edge threshold."))
+  })
+  output[[id("interactions")]] <- renderTable({
+    d <- partners(); req(nrow(d) > 0); d
+  }, digits = 4)
+}
+
+server <- function(input, output, session) {
+  root <- site_root(session)
+  withProgress(message = "Loading atlas data:", value = 0, {
+    load_atlas(root, progress = function(value, detail) setProgress(value, detail = detail))
+  })
+  md <- DATA$metadata
+
+  # ---- Welcome images ----
+  welcome_imgs <- c(img_species_tree = "species_tree", img_umap_atlas = "umap_atlas",
+                    img_methodology = "methodology_summary", img_gdd = "gdd_plot")
+  for (nm in names(welcome_imgs)) local({
+    out_id <- nm
+    f <- welcome_imgs[[nm]]
+    output[[out_id]] <- renderUI(
+      tags$img(src = paste0(root, "welcome_assets/", f, ".png"),
+               style = "width: 70%; max-width: 420px; margin: auto; display: block;"))
+  })
+
+  # ---- Gene search ----
+  updateSelectizeInput(session, "gene_id", choices = DATA$gene_choices,
+                       selected = "Zm00001eb319560", server = TRUE)
+
+  lookup <- reactive({
+    q <- str_trim(input$gene_id %||% "")
+    if (q == "") return(list(og = NULL, msg = NULL))
+    if (q %in% DATA$expr_index$OG) return(list(og = q, msg = paste0(q, " ✓")))
+    og <- unname(DATA$gene2og[q])
+    if (length(og) && !is.na(og)) {
+      if (og %in% DATA$expr_index$OG) return(list(og = og, msg = paste("Mapped orthogroup:", og)))
+      return(list(og = NULL, msg = paste0("Maps to ", og, ", which is not in the expression atlas (filtered out).")))
+    }
+    list(og = NULL, msg = "ID not found in the atlas.")
+  })
+  target_og <- reactive(lookup()$og)
+
+  output$og_id_display <- renderUI({
+    l <- lookup()
+    if (is.null(l$msg)) return(NULL)
+    ok <- !is.null(l$og)
+    span(l$msg, style = paste0("color:", if (ok) "#282" else "#e44", "; font-weight:", if (ok) "bold" else "normal",
+                               "; font-size: 0.85em; display: block; margin: -8px 0 10px;"))
+  })
+
+  # ---- Filters: season -> tissue -> species -> accessions ----
+  seasons_sel <- reactive(if (identical(input$season, "both")) c("2023", "2024") else input$season)
+
+  observeEvent(seasons_sel(), {
+    ch <- tissue_choices(seasons_sel())
+    keep <- intersect(input$filter_tissue %||% "leaf", unlist(ch))
+    if (!length(keep)) keep <- unlist(ch)[1]
+    freezeReactiveValue(input, "filter_tissue")
+    updateSelectizeInput(session, "filter_tissue", choices = ch, selected = keep)
+  })
+
+  first_species <- TRUE
+  observeEvent(list(seasons_sel(), input$filter_tissue), {
+    sel <- if (first_species) {
+      c("Andropogon_gerardii", "Zea_mays", "Tripsacum_dactyloides", "Sorghum_bicolor",
+        "Sorghastrum_nutans", "Zea_diploperennis")
+    } else isolate(input$filter_species) %||% character()
+    first_species <<- FALSE
+    freezeReactiveValue(input, "filter_species")
+    updateSelectizeInput(session, "filter_species",
+                         choices = species_choices(seasons_sel(), input$filter_tissue %||% character()),
+                         selected = sel)
+  }, ignoreNULL = FALSE)
+
+  avail_accessions <- reactive({
+    DATA$avail %>%
+      filter(species %in% (input$filter_species %||% character()), season %in% seasons_sel(),
+             tissue_type %in% (input$filter_tissue %||% character())) %>%
+      pull(accession) %>% unique() %>% sort()
+  })
+
+  observeEvent(list(input$filter_species, seasons_sel(), input$filter_tissue), {
+    accs <- avail_accessions()
+    sp <- input$filter_species %||% character()
+    keep <- intersect(isolate(acc_pref()), accs)   # user's intended picks that exist for this season/tissue
+    need <- sp[!sp %in% DATA$acc2sp[keep]]          # selected species with no accession picked yet
+    sel <- union(keep, default_accessions(need, accs))
+    freezeReactiveValue(input, "filter_accession")
+    updateSelectizeInput(session, "filter_accession", choices = accession_choices(accs), selected = sel)
+  }, ignoreNULL = FALSE)
+
+  # Remember what the user intends, including picks hidden by the current season/tissue,
+  # so switching 2024 -> Both brings the 2023 accessions back.
+  acc_pref <- reactiveVal(character())
+  observeEvent(input$filter_accession, {
+    shown <- isolate(avail_accessions())
+    acc_pref(union(setdiff(isolate(acc_pref()), shown), input$filter_accession %||% character()))
+  }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+  observeEvent(input$acc_all, {
+    updateSelectizeInput(session, "filter_accession", selected = avail_accessions())
+  })
+  observeEvent(input$acc_none, {
+    updateSelectizeInput(session, "filter_accession", selected = character())
+  })
+
+  output$missing_note <- renderUI({
+    sp <- input$filter_species %||% character()
+    a <- DATA$avail %>% filter(season %in% seasons_sel(), tissue_type %in% (input$filter_tissue %||% character()))
+    miss <- setdiff(sp, a$species)
+    if (!length(miss)) return(NULL)
+    txt <- sapply(miss, function(s) paste0(pretty_name(s), " (",
+                                           season_tag(DATA$avail$season[DATA$avail$species == s]), " only)"))
+    div(class = "wx-note", style = "margin-top: 6px;",
+        tags$b("No samples for this season/tissue: "), paste(txt, collapse = "; "))
+  })
+
+  # ---- Data ----
+  og_expr <- reactive({
+    og <- target_og(); req(og)
+    get_expression(og, root)
+  })
+  filters <- reactive(list(seasons = seasons_sel(), tissue = input$filter_tissue,
+                           acc = input$filter_accession)) %>% debounce(300)
+  expr_df <- reactive({
+    f <- filters()
+    ex <- og_expr()
+    md %>%
+      filter(season %in% f$seasons, tissue_type %in% (f$tissue %||% character()),
+             accession %in% (f$acc %||% character())) %>%
+      inner_join(ex, by = "sample_id")
+  })
+  y_rng <- reactive({
+    r <- range(expr_df()$expression, na.rm = TRUE)
+    b <- max(diff(r) * 0.1, 0.2)
+    c(r[1] - b, r[2] + b)
+  })
+  wx <- reactive({
+    if (!isTRUE(input$wx_on) || identical(input$x_axis, "ps")) return(NULL)
+    weather_by_week(input$wx_var, input$wx_window) %>%
+      semi_join(distinct(md, season, week), by = c("season", "week"))
+  })
+  seasons_present <- reactive(intersect(c("2023", "2024"), unique(expr_df()$season)))
+
+  file_stub <- function(kind) paste0(target_og() %||% "atlas", "_", kind)
+
+  output$expr_title <- renderUI({
+    og <- target_og(); req(og)
+    q <- str_trim(input$gene_id %||% "")
+    gene <- if (nzchar(q) && q != og) paste0(q, " (", og, ")") else og
+    tis <- paste(tissue_labels[input$filter_tissue %||% character()], collapse = ", ")
+    gv <- c(species = "species", accession = "accession", tissue_type = "tissue", tissue = "organ",
+            life_history = "life history", season = "season")[[input$group_var]]
+    tagList(h5(gene),
+            p(paste0(tis, " · ", if (identical(input$season, "both")) "2023 and 2024" else input$season,
+                     " · coloured by ", gv, if (identical(input$x_axis, "ps")) " · x: photosynthetic index" else "",
+                     if (!(input$highlight %||% "none") %in% c("", "none")) paste0(" · highlighting ", pretty_name(input$highlight)) else "")))
+  })
+
+  observeEvent(list(expr_df(), input$group_var), {
+    g <- sort(unique(as.character(expr_df()[[input$group_var]])))
+    keep <- if (isTRUE(input$highlight %in% g)) input$highlight else "none"
+    updateSelectInput(session, "highlight", choices = c("None (show all in colour)" = "none", setNames(g, pretty_name(g))),
+                      selected = keep)
   })
 
   output$box_plot <- renderPlotly({
-    df <- gene_data(); req(nrow(df) > 0)
-    yr <- y_range(); y_min <- yr[1]; y_max <- yr[2]; buffer <- (y_max - y_min) * 0.1
-    p <- ggplot(df, aes(x = .data[[input$group_var]], y = expression, fill = .data[[input$group_var]])) +
-      geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-      geom_jitter(aes(text = paste("Sample:", sample_id, "<br>VST:", round(expression, 2))), width = 0.2, alpha = 0.3, size = 1) +
-      scale_fill_manual(values = active_palette()) +
-      coord_cartesian(ylim = c(y_min - buffer, y_max + (buffer * 2.5))) +
-      theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
-      labs(y = "expression (normalized VST-counts)", x = NULL)
-    ggplotly(p, tooltip = "text")
+    df <- expr_df()
+    validate(need(nrow(df) > 0, "No samples match the current filters."))
+    make_stripplot(df, input$group_var, y_rng(), isTRUE(input$violin), input$highlight, file_stub("distribution"))
   })
-  
-  # Force plots to render even when Expression Explorer tab is not active
-  outputOptions(output, "ribbon_plot", suspendWhenHidden = FALSE)
-  outputOptions(output, "box_plot",    suspendWhenHidden = FALSE)
-  
-  # --- Network Explorer Server Logic ---
-  net_target_og_raw <- reactive({
-    query_id <- str_trim(input$net_query)
-    if (query_id == "") return(NULL)
-    if (str_starts(query_id, "OG")) {
-      return(query_id)
-    } else {
-      match_row <- gene_og_map %>% filter(GeneID == query_id)
-      if (nrow(match_row) > 0) return(match_row$Orthogroup[1])
+
+  output$tc_header <- renderText(
+    if (identical(input$x_axis, "ps")) "Trajectory along the photosynthetic index (loess ± 95% CI)" else "Weekly trajectory (mean ± SE)")
+  output$tc_footer <- renderText(
+    if (identical(input$x_axis, "ps")) "Dots: libraries. Lines: loess fit per group (span 0.5) with 95% CI. Selected seasons are combined; the index aligns the photosynthesis-to-senescence transition across species." else
+      "Week and first sampling date. Ribbon: mean ± SE. Background: July (green) to October (yellow).")
+  output$tc_ps <- renderPlotly({
+    df <- expr_df()
+    validate(need(any(!is.na(df$ps_index)), "No photosynthetic index for these libraries."))
+    make_ps_curve(df, input$group_var, y_rng(), input$highlight, file_stub("ps_index"))
+  })
+  output$tc_panels <- renderUI({
+    if (identical(input$x_axis, "ps")) {
+      validate(need(nrow(expr_df()) > 0, "No samples match the current filters."))
+      return(tagList(h6("Selected seasons combined", class = "mt-2 mb-0"), plotlyOutput("tc_ps", height = "560px")))
     }
-    return(query_id) 
+    s <- seasons_present()
+    validate(need(length(s) > 0, "No samples match the current filters."))
+    h <- if (length(s) == 1) "560px" else "420px"
+    tagList(lapply(s, function(x) tagList(
+      h6(paste(x, "season"), class = "mt-2 mb-0"),
+      plotlyOutput(paste0("tc_", x), height = h))))
   })
-  
-  net_target_og <- net_target_og_raw %>% debounce(500)
+  for (s in c("2023", "2024")) local({
+    ss <- s
+    output[[paste0("tc_", ss)]] <- renderPlotly({
+      df <- expr_df()
+      req(ss %in% df$season)
+      make_timecourse(df, ss, input$group_var, y_rng(), wx(), input$wx_var, input$highlight,
+                      file_stub(paste0("timecourse_", ss)))
+    })
+  })
 
-  output$net_status_msg <- renderUI({
-    query_id <- str_trim(input$net_query)
-    if (query_id == "") return(NULL)
-    tog <- net_target_og()
-    if (is.null(tog)) return(NULL)
-    
-    if (!(tog %in% umap_df$gene)) {
-      return(tags$div("Not found in network", style = "color: red; font-weight: bold; margin-top: 10px;"))
-    } else {
-      return(tags$div("Orthogroup highlighted!", style = "color: green; font-weight: bold; margin-top: 10px;"))
+  output$dl_samples <- downloadHandler(
+    filename = function() paste0(file_stub("samples"), ".csv"),
+    content = function(file) {
+      d <- expr_df() %>%
+        transmute(orthogroup = target_og(), sample_id, species, accession, season, tissue = tissue_type,
+                  week, date = format(date), julian_day = julian_days, ps_index, vst_expression = expression) %>%
+        arrange(season, species, accession, tissue, week)
+      write.csv(d, file, row.names = FALSE)
     }
-  })
-
-  # Clear search box whenever user clicks a node directly
-  observeEvent(event_data("plotly_click", source = "network_view"), {
-    updateTextInput(session, "net_query", value = "")
-  })
-
-  output$network_plot <- renderPlotly({
-    req(nrow(umap_df) > 0)
-    plot_data <- umap_df
-    edge_data <- edges_df
-    tog   <- net_target_og()           # from search box
-    click <- event_data("plotly_click", source = "network_view")
-    clicked_gene <- if (!is.null(click)) click$key else NULL
-    
-    # Active highlight: search query takes priority, then click
-    active_gene <- if (!is.null(tog) && str_trim(input$net_query) != "") tog else clicked_gene
-    
-    is_query_active <- !is.null(active_gene)
-    is_query_found  <- is_query_active && (active_gene %in% plot_data$gene)
-    
-    # --- Compute node display properties ---
-    if (is_query_active && !is_query_found) {
-      plot_data <- plot_data %>%
-        mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
-    } else if (is_query_found) {
-      plot_data <- plot_data %>%
-        mutate(
-          display_color = ifelse(gene == active_gene, color, "lightgrey"),
-          display_opacity = ifelse(gene == active_gene, 1, 0.15),
-          display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))
-        ) %>%
-        arrange(gene == active_gene)
-    } else if (input$net_module != "All Modules") {
-      plot_data <- plot_data %>%
-        mutate(
-          display_color = ifelse(module_label == input$net_module, color, "lightgrey"),
-          display_opacity = ifelse(module_label == input$net_module, 0.9, 0.15),
-          display_size = pmax(kME * 15, 3)
-        )
-    } else {
-      plot_data <- plot_data %>%
-        mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
+  )
+  output$dl_summary <- downloadHandler(
+    filename = function() paste0(file_stub(if (identical(input$x_axis, "ps")) "ps_index_loess" else "timecourse"), ".csv"),
+    content = function(file) {
+      gv <- input$group_var
+      if (identical(input$x_axis, "ps")) {
+        f <- ps_fits(expr_df() %>% filter(!is.na(ps_index)) %>% mutate(group = as.character(.data[[gv]])))
+        f <- f %>% mutate(across(c(ps_index, fit, se, ci_low, ci_high), ~ round(.x, 4))) %>%
+          rename(loess_vst = fit) %>% mutate(orthogroup = target_og(), grouped_by = gv, .before = 1)
+        write.csv(f, file, row.names = FALSE)
+        return(invisible())
+      }
+      wkd <- md %>% group_by(season, week) %>% summarise(first_sampling_date = format(min(date)), .groups = "drop")
+      d <- expr_df() %>%
+        group_by(season, group = as.character(.data[[gv]]), week) %>%
+        summarise(mean_vst = round(mean(expression), 4),
+                  se_vst = round(if (n() > 1) sd(expression) / sqrt(n()) else 0, 4),
+                  median_vst = round(median(expression), 4), n = n(), .groups = "drop") %>%
+        left_join(wkd, by = c("season", "week")) %>%
+        mutate(orthogroup = target_og(), grouped_by = gv, .before = 1)
+      w <- wx()
+      if (!is.null(w)) {
+        d <- d %>% left_join(w %>% rename(weather_value = value), by = c("season", "week")) %>%
+          mutate(weather_variable = weather_axis[[input$wx_var]],
+                 weather_window = if (input$wx_window == "calendar") "calendar week" else "7 days before sampling",
+                 weather_value = round(weather_value, 2)) %>%
+          relocate(weather_variable, weather_window, .before = weather_value)
+      }
+      write.csv(d %>% arrange(season, group, week), file, row.names = FALSE)
     }
-    
-    # --- Compute edge display properties ---
-    if (is_query_active && !is_query_found) {
-      edge_data <- edge_data %>%
-        mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
-    } else if (is_query_found) {
-      is_connected <- edge_data$from == active_gene | edge_data$to == active_gene
-      edge_data <- edge_data %>%
-        mutate(
-          edge_color   = ifelse(is_connected, "red", "lightgrey"),
-          edge_opacity = ifelse(is_connected, 0.8, 0.02),
-          edge_width   = ifelse(is_connected, 2, 0.5)
-        ) %>%
-        arrange(is_connected)
-    } else {
-      edge_data <- edge_data %>%
-        mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
-    }
-    
-    p <- plot_ly(source = "network_view")
-    
-    # --- Draw edges first (so nodes appear on top) ---
-    # Split into highlighted vs background to allow separate opacity control
-    bg_edges <- edge_data %>% filter(edge_opacity < 0.5)
-    hi_edges <- edge_data %>% filter(edge_opacity >= 0.5)
-    
-    if (nrow(bg_edges) > 0) {
-      p <- p %>% add_segments(
-        data = bg_edges,
-        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
-        line = list(color = "lightgrey", width = 0.5),
-        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
-      )
-    }
-    if (nrow(hi_edges) > 0) {
-      p <- p %>% add_segments(
-        data = hi_edges,
-        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
-        line = list(color = "red", width = 2),
-        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
-      )
-    }
-    
-    # --- Draw nodes on top of edges ---
-    p <- p %>% add_trace(
-      data = plot_data,
-      x = ~UMAP1, y = ~UMAP2,
-      type = "scatter", mode = "markers",
-      marker = list(
-        color = ~display_color,
-        size = ~display_size,
-        opacity = ~display_opacity,
-        line = list(color = "white", width = 0.5)
-      ),
-      text = ~paste0("OG: ", gene, "<br>Zea mays: ", Zea_mays_genes, "<br>Module: ", module_label, "<br>kME: ", round(kME, 3)),
-      hoverinfo = "text",
-      key = ~gene,
-      showlegend = FALSE
-    )
-    
-    p %>% layout(
-      xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-      yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-      hovermode = "closest"
-    )
-  })
-  
-  output$node_table <- renderTable({
-    click_data <- event_data("plotly_click", source = "network_view")
-    if (is.null(click_data)) return(NULL)
-    
-    clicked_gene <- click_data$key
-    
-    node_info <- umap_df %>%
-      filter(gene == clicked_gene) %>%
-      select(
-        Orthogroup = gene,
-        `Zea mays Gene` = Zea_mays_genes,
-        Module = module_label,
-        kME = kME
-      ) %>%
-      separate_rows(`Zea mays Gene`, sep = ", ")
-      
-    # Extract desc columns by index: 1=gene_id, 5=sink_source, 6=hub_ranking_kME, 7=description
-    desc_subset <- data.frame(
-      gene_id_Zm    = desc_df[[1]],
-      sink_source   = as.character(desc_df[[5]]),
-      hub_score     = as.numeric(desc_df[[6]]),
-      Description   = as.character(desc_df[[7]]),
-      stringsAsFactors = FALSE
-    )
-    
-    node_info <- node_info %>%
-      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %>%
-      mutate(
-        Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
-        sink_source   = ifelse(is.na(sink_source), "—", sink_source),
-        `kME (Hub Score)` = round(kME, 3),
-        `Zea mays Gene` = ifelse(
-          `Zea mays Gene` != "None" & `Zea mays Gene` != "",
-          paste0('<a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank">', `Zea mays Gene`, '</a>'),
-          "None"
-        )
-      ) %>%
-      select(
-        Orthogroup,
-        `Zea mays Gene`,
-        Module,
-        `Sink/Source` = sink_source,
-        `kME (Hub Score)`,
-        Description
-      )
-    
-    return(node_info)
-  }, sanitize.text.function = function(x) x)
+  )
 
-  output$module_plot_ui <- renderUI({
-    click_data <- event_data("plotly_click", source = "network_view")
-    if (is.null(click_data)) return(NULL)
-    
-    clicked_gene <- click_data$key
-    mod <- umap_df %>% filter(gene == clicked_gene) %>% pull(module_label)
-    if (length(mod) == 0) return(NULL)
-    mod <- mod[1]
-    
-    b64_src <- module_plots_b64[[mod]]
-    if (is.null(b64_src) || is.na(b64_src)) {
-      return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
-    }
-    
-    tagList(
-      h6(paste0("Module Eigengene Pattern: ", mod)),
-      tags$img(
-        src   = b64_src,
-        style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"
-      ),
-      hr()
-    )
-  })
-
-  output$interactions_table <- renderTable({
-    click_data <- event_data("plotly_click", source = "network_view")
-    if (is.null(click_data)) return(NULL)
-    
-    clicked_gene <- click_data$key
-    
-    # Find all edges involving this gene
-    connected <- edges_df %>%
-      filter(from == clicked_gene | to == clicked_gene) %>%
-      mutate(partner = ifelse(from == clicked_gene, to, from)) %>%
-      select(partner, weight) %>%
-      arrange(desc(weight))
-    
-    if (nrow(connected) == 0) return(NULL)
-    
-    # Build a simple lookup using column positions to avoid complex name issues
-    desc_lookup <- data.frame(
-      OG          = desc_df[[2]],
-      zm_gene     = desc_df[[1]],
-      description = as.character(desc_df[[7]]),
-      stringsAsFactors = FALSE
-    ) %>%
-      group_by(OG) %>%
-      summarise(
-        `Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
-        Description     = {
-          descs <- unique(description[description != "" & !is.na(description)])
-          if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
-        },
-        .groups = "drop"
-      )
-    
-    connected %>%
-      left_join(desc_lookup, by = c("partner" = "OG")) %>%
-      mutate(
-        Description     = ifelse(is.na(Description), "No description available", Description),
-        `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
-        weight          = round(weight, 4)
-      ) %>%
-      rename(
-        `Partner OG` = partner,
-        `TOM Weight` = weight
-      )
-  })
-
-  # === UNDERGROUND NETWORK LOGIC ===
-  und_net_target_og <- reactive({
-    query <- str_trim(input$und_net_query)
-    if (query == "") return(NULL)
-    if (query %in% und_umap_df$gene) return(query)
-    match_og <- und_umap_df %>% filter(str_detect(Zea_mays_genes, query)) %>% pull(gene)
-    if (length(match_og) > 0) return(match_og[1])
-    return(NULL)
-  })
-
-  output$und_net_status_msg <- renderUI({
-    tog <- und_net_target_og()
-    if (str_trim(input$und_net_query) == "") return(NULL)
-    if (is.null(tog)) {
-      span("Gene not found in network.", style = "color: #d9534f; font-size: 0.9em; font-weight: bold;")
-    } else {
-      span(paste("Highlighted:", tog), style = "color: #5cb85c; font-size: 0.9em; font-weight: bold;")
-    }
-  })
-
-  observeEvent(event_data("plotly_click", source = "und_network_view"), {
-    updateTextInput(session, "und_net_query", value = "")
-  })
-
-  output$und_network_plot <- renderPlotly({
-    req(nrow(und_umap_df) > 0)
-    plot_data <- und_umap_df
-    edge_data <- und_edges_df
-    tog   <- und_net_target_og()
-    click <- event_data("plotly_click", source = "und_network_view")
-    clicked_gene <- if (!is.null(click)) click$key else NULL
-    active_gene <- if (!is.null(tog) && str_trim(input$und_net_query) != "") tog else clicked_gene
-    is_query_active <- !is.null(active_gene)
-    is_query_found  <- is_query_active && (active_gene %in% plot_data$gene)
-
-    if (is_query_active && !is_query_found) {
-      plot_data <- plot_data %>% mutate(display_color = "lightgrey", display_opacity = 0.15, display_size = 3)
-      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.03, edge_width = 0.5)
-    } else if (is_query_found) {
-      plot_data <- plot_data %>%
-        mutate(display_color = ifelse(gene == active_gene, color, "lightgrey"),
-               display_opacity = ifelse(gene == active_gene, 1, 0.15),
-               display_size = ifelse(gene == active_gene, 20, pmax(kME * 10, 3))) %>%
-        arrange(gene == active_gene)
-      is_connected <- edge_data$from == active_gene | edge_data$to == active_gene
-      edge_data <- edge_data %>%
-        mutate(edge_color = ifelse(is_connected, "red", "lightgrey"),
-               edge_opacity = ifelse(is_connected, 0.8, 0.02),
-               edge_width = ifelse(is_connected, 2, 0.5)) %>%
-        arrange(is_connected)
-    } else if (input$und_net_module != "All Modules") {
-      plot_data <- plot_data %>%
-        mutate(display_color = ifelse(module_label == input$und_net_module, color, "lightgrey"),
-               display_opacity = ifelse(module_label == input$und_net_module, 0.9, 0.15),
-               display_size = pmax(kME * 15, 3))
-      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
-    } else {
-      plot_data <- plot_data %>% mutate(display_color = color, display_opacity = 0.8, display_size = pmax(kME * 15, 3))
-      edge_data <- edge_data %>% mutate(edge_color = "lightgrey", edge_opacity = 0.08, edge_width = 0.5)
-    }
-
-    p <- plot_ly(source = "und_network_view")
-    
-    # --- Split into highlighted vs background to allow separate opacity control ---
-    bg_edges <- edge_data %>% filter(edge_opacity < 0.5)
-    hi_edges <- edge_data %>% filter(edge_opacity >= 0.5)
-    
-    if (nrow(bg_edges) > 0) {
-      p <- p %>% add_segments(
-        data = bg_edges,
-        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
-        line = list(color = "lightgrey", width = 0.5),
-        opacity = 0.08, hoverinfo = "none", showlegend = FALSE
-      )
-    }
-    if (nrow(hi_edges) > 0) {
-      p <- p %>% add_segments(
-        data = hi_edges,
-        x = ~x0, xend = ~x1, y = ~y0, yend = ~y1,
-        line = list(color = "red", width = 2),
-        opacity = 0.85, hoverinfo = "none", showlegend = FALSE
-      )
-    }
-
-    p <- p %>% add_trace(data = plot_data, x = ~UMAP1, y = ~UMAP2, type = "scatter", mode = "markers",
-                key = ~gene, marker = list(size = ~display_size, color = ~display_color,
-                                           opacity = ~display_opacity, line = list(width = 0.5, color = "white")),
-                text = ~paste0("<b>OG:</b> ", gene, "<br><b>ZmID:</b> ", Zea_mays_genes,
-                               "<br><b>Module:</b> ", module_label, "<br><b>kME:</b> ", round(kME, 3)),
-                hoverinfo = "text") %>%
-      layout(xaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-             yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-             hovermode = "closest")
-    p
-  })
-
-  output$und_node_table <- renderTable({
-    click_data <- event_data("plotly_click", source = "und_network_view")
-    if (is.null(click_data)) return(NULL)
-    clicked_gene <- click_data$key
-    node_info <- und_umap_df %>%
-      filter(gene == clicked_gene) %>%
-      select(Orthogroup = gene, `Zea mays Gene` = Zea_mays_genes, Module = module_label, kME = kME) %>%
-      separate_rows(`Zea mays Gene`, sep = ", ")
-    
-    # und_desc_df mapping: 1=gene_id, 2=OG, 5=hub_score, 6=description
-    desc_subset <- data.frame(
-      gene_id_Zm    = und_desc_df[[1]],
-      hub_score     = as.numeric(und_desc_df[[5]]),
-      Description   = as.character(und_desc_df[[6]]),
-      stringsAsFactors = FALSE
-    )
-    
-    node_info <- node_info %>%
-      left_join(desc_subset, by = c("Zea mays Gene" = "gene_id_Zm")) %>%
-      mutate(Description   = ifelse(is.na(Description) | Description == "", "No description available", Description),
-             `kME (Hub Score)` = round(kME, 3),
-             `Zea mays Gene` = ifelse(`Zea mays Gene` != "None" & `Zea mays Gene` != "",
-                                      paste0('<a href="https://www.maizegdb.org/gene_center/gene/', `Zea mays Gene`, '" target="_blank">', `Zea mays Gene`, '</a>'), "None")) %>%
-      select(Orthogroup, `Zea mays Gene`, Module, `kME (Hub Score)`, Description)
-    return(node_info)
-  }, sanitize.text.function = function(x) x)
-
-  output$und_module_plot_ui <- renderUI({
-    click_data <- event_data("plotly_click", source = "und_network_view")
-    if (is.null(click_data)) return(NULL)
-    clicked_gene <- click_data$key
-    mod <- und_umap_df %>% filter(gene == clicked_gene) %>% pull(module_label)
-    if (length(mod) == 0) return(NULL)
-    mod <- mod[1]
-    b64_src <- und_module_plots_b64[[mod]]
-    if (is.null(b64_src) || is.na(b64_src)) return(tags$p(paste("No plot available for module:", mod), style = "color: grey;"))
-    tagList(
-      h6(paste0("Module Eigengene Pattern: ", mod)),
-      tags$img(src = b64_src, style = "width:100%; max-width:480px; border-radius:6px; margin-bottom:10px;"),
-      hr()
-    )
-  })
-
-  output$und_interactions_table <- renderTable({
-    click_data <- event_data("plotly_click", source = "und_network_view")
-    if (is.null(click_data)) return(NULL)
-    clicked_gene <- click_data$key
-    connected <- und_edges_df %>%
-      filter(from == clicked_gene | to == clicked_gene) %>%
-      mutate(partner = ifelse(from == clicked_gene, to, from)) %>%
-      select(partner, weight) %>%
-      arrange(desc(weight))
-    if (nrow(connected) == 0) return(NULL)
-    
-    desc_lookup <- data.frame(OG = und_desc_df[[2]], zm_gene = und_desc_df[[1]], description = as.character(und_desc_df[[6]]), stringsAsFactors = FALSE) %>%
-      group_by(OG) %>%
-      summarise(`Zea mays Gene` = paste(unique(zm_gene), collapse = ", "),
-                Description = {
-                  descs <- unique(description[description != "" & !is.na(description)])
-                  if (length(descs) == 0) "No description available" else paste(descs, collapse = " / ")
-                }, .groups = "drop")
-    
-    connected %>%
-      left_join(desc_lookup, by = c("partner" = "OG")) %>%
-      mutate(Description = ifelse(is.na(Description), "No description available", Description),
-             `Zea mays Gene` = ifelse(is.na(`Zea mays Gene`), "None", `Zea mays Gene`),
-             weight = round(weight, 4)) %>%
-      rename(`Partner OG` = partner, `TOM Weight` = weight)
-  })
+  # ---- Networks ----
+  go_expr <- function(og, tissues) {
+    updateSelectizeInput(session, "gene_id", choices = DATA$gene_choices, selected = og, server = TRUE)
+    updateSelectizeInput(session, "filter_tissue", selected = intersect(tissues, unlist(tissue_choices(seasons_sel()))))
+    nav_select("main_nav", "Expression Explorer", session = session)
+  }
+  network_server(input, output, session, "leaf_", DATA$leaf, root, go_expr, "leaf")
+  network_server(input, output, session, "und_", DATA$und, root, go_expr,
+                 c("root", "fine_roots", "thick_roots", "rhizome", "stalk"))
 }
 
 shinyApp(ui, server)
